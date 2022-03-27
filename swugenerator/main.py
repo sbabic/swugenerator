@@ -26,11 +26,11 @@ def extract_keys(keyfile):
 
     data = {}
     for _ in lines:
-        k,v = _.split('=', maxsplit=1)
+        k,v = _.split()
         data[k.rstrip()] = v
 
-    key = data['key'].rstrip('\n')
-    iv = data['iv'].rstrip('\n')
+    key = k.rstrip('\n')
+    iv = v.rstrip('\n')
     return key, iv
 
 
@@ -52,12 +52,21 @@ def main() -> None:
     )
 
     parser.add_argument(
+        "-n",
+        "--no-compress",
+        action='store_const',
+        const=True,
+        default=False,
+        help="Do not compress files",
+    )
+
+    parser.add_argument(
         "-k",
         "--sign",
         help=textwrap.dedent('''\
             RSA key or certificate to sign the SWU
             One of :
-            CMS,<private key>,<certificate used to sign>,<file with password if any> 
+            CMS,<private key>,<certificate used to sign>,<file with password if any>
             RSA,<private key>,<file with password if any>
             PKCS11,<pin>
             PKCS11,<custom command ''')
