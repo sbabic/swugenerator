@@ -6,6 +6,7 @@ import os
 import re
 import codecs
 import libconf
+import subprocess
 from tempfile import TemporaryDirectory
 
 from Crypto import Random
@@ -15,7 +16,7 @@ from swugenerator.artifact import Artifact
 
 
 class SWUGenerator:
-    def __init__(self, template, out, confvars, dirs, crypt, aeskey, firstiv):
+    def __init__(self, template, out, confvars, dirs, crypt, aeskey, firstiv, no_compress=False):
         self.swdescription = template
         self.artifacts = []
         self.out = open(out, 'wb')
@@ -29,6 +30,7 @@ class SWUGenerator:
         self.signtool = crypt
         self.aeskey = aeskey
         self.aesiv = firstiv
+        self.nocompress = no_compress
 
     @staticmethod
     def generate_iv():
@@ -67,6 +69,28 @@ class SWUGenerator:
                 # recompute sha256, now for the encrypted file
                 new.computesha256()
                 entry['ivt'] = iv
+            if 'compressed' in entry and not self.nocompress:
+                cmp = entry['compressed']
+                if cmp == True:
+                    cmp = 'zlib'
+                if cmp != 'zlib' and cmp != 'zstd':
+                    logging.critical("Wrong compression algorithm: %s" % cmp)
+                    exit(1)
+
+                new_path = os.path.join(self.temp.name, entry['filename']) + '.' + cmp
+
+                if cmp == 'zlib':
+                    cmd = ['gzip', '-f', '-9', '-n', '-c', '-rsyncable', new.fullfilename, '>', new_path]
+                else:
+                    cmd = ['zstd', '-z', '-k', '-T0', '-c', new.fullfilename, '>', new_path]
+
+                try:
+                    subprocess.run(' '.join(cmd), shell=True, check=True, text=True)
+                except:
+                    logging.critical('Cannot compress %s with %s' % (entry['filename'], cmd))
+                    exit(1)
+
+                new.fullfilename = new_path
 
             self.artifacts.append(new)
         else:

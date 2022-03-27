@@ -159,7 +159,13 @@ def main() -> None:
             artidirs.append(deploy)
 
     if args.command == "create":
-        swu = generator.SWUGenerator(args.sw_description, args.swu_file, vars, artidirs, sign_option, key, iv)
+        swu = generator.SWUGenerator(args.sw_description,
+                                     args.swu_file,
+                                     vars,
+                                     artidirs,
+                                     sign_option,
+                                     key, iv,
+                                     args.no_compress)
         swu.process()
         swu.close()
     else:
