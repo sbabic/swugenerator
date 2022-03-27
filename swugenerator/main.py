@@ -69,7 +69,7 @@ def main() -> None:
             CMS,<private key>,<certificate used to sign>,<file with password if any>
             RSA,<private key>,<file with password if any>
             PKCS11,<pin>
-            PKCS11,<custom command ''')
+            CUSTOM,<custom command> ''')
     )
 
     parser.add_argument(
