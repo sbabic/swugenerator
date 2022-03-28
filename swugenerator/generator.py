@@ -80,7 +80,7 @@ class SWUGenerator:
                 new_path = os.path.join(self.temp.name, entry['filename']) + '.' + cmp
 
                 if cmp == 'zlib':
-                    cmd = ['gzip', '-f', '-9', '-n', '-c', '-rsyncable', new.fullfilename, '>', new_path]
+                    cmd = ['gzip', '-f', '-9', '-n', '-c', '--rsyncable', new.fullfilename, '>', new_path]
                 else:
                     cmd = ['zstd', '-z', '-k', '-T0', '-c', new.fullfilename, '>', new_path]
 
