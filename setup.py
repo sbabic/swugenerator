@@ -24,7 +24,7 @@ setup(
     install_requires=[
         'libconf~=2.0.1',
         'setuptools~=57.0.0',
-        'crypto~=1.4.1',
+        'pycrypto~=2.6.1',
     ],
 
     python_requires='>=3.6',
