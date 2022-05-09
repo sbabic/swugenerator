@@ -10,7 +10,7 @@ setup(
     name='swugenerator',
     version='0.1',
     packages=find_packages(),
-    url='https://github.com/swugenerator',
+    url='https://github.com/sbabic/swugenerator',
     license='GPLv3',
     author='Stefano Babic',
     author_email='stefano.babic@babic.homelinux.org',
