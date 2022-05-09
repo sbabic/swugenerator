@@ -6,10 +6,9 @@ import os
 import re
 import codecs
 import libconf
+import secrets
 import subprocess
 from tempfile import TemporaryDirectory
-
-from Crypto import Random
 
 from swugenerator.SWUFile import swufile
 from swugenerator.artifact import Artifact
@@ -34,7 +33,7 @@ class SWUGenerator:
 
     @staticmethod
     def generate_iv():
-        return Random.get_random_bytes(16).hex()
+        return secrets.token_hex(16)
 
     def _read_swdesc(self):
         with codecs.open(self.swdescription, 'r') as f:
