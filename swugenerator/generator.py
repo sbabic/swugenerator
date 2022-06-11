@@ -116,6 +116,7 @@ class SWUGenerator:
     def process(self):
         self._read_swdesc()
         self._expand_variables()
+        self._exec_functions()
 
         swdesc = ""
         for line in self.lines:
@@ -166,11 +167,31 @@ class SWUGenerator:
                     continue
                 else:
                     break
-
             write_lines.append(line)
-
         self.lines = write_lines
+
+    def _exec_functions(self):
+        import re
+        for index, line in enumerate(self.lines):
+            m = re.match(
+                r"^(?P<before_placeholder>.+)\$(?P<function_name>\w+)\((?P<parms>.+)\)(?P<after_placeholder>.+)$",
+                line)
+            if m:
+                fun = "self." + m.group('function_name') + "(\"" + m.group('parms') + "\")"
+                ret = eval(fun)
+                line = m.group('before_placeholder') + ret + m.group('after_placeholder') + "\n"
+                self.lines[index] = line
 
     def setenckey(self, k, iv):
         self.aeskey = k
         self.aesiv = iv
+
+    def swupdate_get_sha256(self, filename):
+        a = Artifact(filename)
+        return a.computesha256()
+
+    def swupdate_get_size(self, filename):
+        a = Artifact(filename)
+        if a.findfile(self.artifactory):
+            return str(a.getsize())
+        return "0"

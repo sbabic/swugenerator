@@ -13,6 +13,7 @@ class Artifact:
         self.fullfilename = filename
         self._available = False
         self.sha256 = ""
+        self.size = 0
 
     def exist(self):
         return os.path.exists(self.filename)
@@ -35,11 +36,15 @@ class Artifact:
             if os.path.exists(fname):
                 self.fullfilename = fname
                 self.sha256 = self.computesha256()
+                self.size = os.path.getsize(fname)
                 return True
         return False
 
     def getsha256(self):
         return self.sha256
+
+    def getsize(self):
+        return self.size
 
     def encrypt(self, out, key, iv):
         enc_args = ["openssl", "enc", "-aes-256-cbc", "-in", self.fullfilename, "-out", out]
