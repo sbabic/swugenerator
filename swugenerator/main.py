@@ -24,13 +24,12 @@ def extract_keys(keyfile):
         logging.fatal("Failed to open file with keys %s" % (keyfile))
         exit(1)
 
-    data = {}
-    for _ in lines:
-        k,v = _.split()
-        data[k.rstrip()] = v
-
-    key = k.rstrip('\n')
-    iv = v.rstrip('\n')
+    key, iv = None, None
+    for line in lines:
+        if 'key' in line:
+            key = line.split('=')[1].rstrip('\n')
+        if 'iv' in line:
+            iv = line.split('=')[1].rstrip('\n')
     return key, iv
 
 
