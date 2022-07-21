@@ -33,11 +33,12 @@ class SWUSign:
 
 
 class SWUSignCMS(SWUSign):
-    def __init__(self, key, cert):
+    def __init__(self, key, cert, passin):
         super(SWUSignCMS, self).__init__()
         self.type = "CMS"
         self.key = key
         self.cert = cert
+        self.passin = passin
 
     def prepare_cmd(self, sw_desc_in, sw_desc_sig):
         self.signcmd = ["openssl", "cms", "-sign", "-in", sw_desc_in, "-out", sw_desc_sig, "-signer", self.cert]
@@ -46,10 +47,11 @@ class SWUSignCMS(SWUSign):
 
 
 class SWUSignRSA(SWUSign):
-    def __init__(self, key):
+    def __init__(self, key, passin):
         super(SWUSignRSA, self).__init__()
         self.type = "RSA"
         self.key = key
+        self.passin = passin
 
     def prepare_cmd(self, sw_desc_in, sw_desc_sig):
         self.signcmd = ["openssl", "dgst", "-sha256", "-sign", self.key] + \

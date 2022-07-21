@@ -121,17 +121,25 @@ def main() -> None:
         sign_parms = args.sign.split(',')
         cmd = sign_parms[0]
         if cmd == 'CMS':
-            #Format : CMS,<private key>,<certificate used to sign>,<file with password if any>
             if len(sign_parms) < 3:
                 logging.critical('CMS requires private key and certificate')
                 exit(1)
-            sign_option = SWUSignCMS(sign_parms[1], sign_parms[2])
+            #Format : CMS,<private key>,<certificate used to sign>,<file with password>
+            if len(sign_parms) == 4:
+                sign_option = SWUSignCMS(sign_parms[1], sign_parms[2], sign_parms[3])
+            #Format : CMS,<private key>,<certificate used to sign>
+            else:
+                sign_option = SWUSignCMS(sign_parms[1], sign_parms[2], None)
         if cmd == 'RSA':
-            #Format : RSA,<private key>,<file with password if any>
             if len(sign_parms) < 2:
                 logging.critical('RSA requires private key')
                 exit(1)
-            sign_option = SWUSignRSA(sign_parms[1])
+            #Format : RSA,<private key>,<file with password>
+            if len(sign_parms) == 3:
+                sign_option = SWUSignRSA(sign_parms[1], sign_parms[2])
+            #Format : RSA,<private key>
+            else:
+                sign_option = SWUSignRSA(sign_parms[1], None)
         if cmd == 'PKCS11':
             #Format : PKCS11,<pin>>
             if len(sign_parms) < 2:
