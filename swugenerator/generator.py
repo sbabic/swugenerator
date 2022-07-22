@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPLv3
 import logging
 import os
+import shutil
 import re
 import codecs
 import libconf
@@ -15,7 +16,7 @@ from swugenerator.artifact import Artifact
 
 
 class SWUGenerator:
-    def __init__(self, template, out, confvars, dirs, crypt, aeskey, firstiv, no_compress=False):
+    def __init__(self, template, out, confvars, dirs, crypt, aeskey, firstiv, encrypt_swdesc=False, no_compress=False):
         self.swdescription = template
         self.artifacts = []
         self.out = open(out, 'wb')
@@ -29,6 +30,7 @@ class SWUGenerator:
         self.signtool = crypt
         self.aeskey = aeskey
         self.aesiv = firstiv
+        self.encryptswdesc = encrypt_swdesc
         self.nocompress = no_compress
 
     @staticmethod
@@ -61,7 +63,7 @@ class SWUGenerator:
 
             # Encrypt if required
             if 'encrypted' in entry and self.aeskey:
-                iv = self.generate_iv()
+                iv = self.aesiv
                 new_path = os.path.join(self.temp.name, entry['filename'])
                 new.encrypt(new_path, self.aeskey, iv)
                 new.fullfilename = new_path
@@ -76,7 +78,8 @@ class SWUGenerator:
                     logging.critical("Wrong compression algorithm: %s" % cmp)
                     exit(1)
 
-                new_path = os.path.join(self.temp.name, entry['filename']) + '.' + cmp
+                #new_path = os.path.join(self.temp.name, entry['filename']) + '.' + cmp
+                new_path = os.path.join(self.temp.name, entry['filename'])
 
                 if cmp == 'zlib':
                     cmd = ['gzip', '-f', '-9', '-n', '-c', '--rsyncable', new.fullfilename, '>', new_path]
@@ -146,8 +149,18 @@ class SWUGenerator:
 
         self.save_swdescription(os.path.join(self.temp.name, sw.filename), swdesc)
 
-        if self.signtool:
-            sw_desc_in = os.path.join(self.temp.name, sw.filename)
+        # Encrypt sw-description if required
+        if self.aeskey and self.encryptswdesc:
+            iv = self.aesiv
+            sw_desc_plain  = os.path.join(self.temp.name, 'sw-description.plain')
+            sw_desc_enc    = os.path.join(self.temp.name, 'sw-description.enc')
+            shutil.copyfile(sw.fullfilename, sw_desc_plain)
+            sw.encrypt(sw_desc_enc, self.aeskey, iv)
+            shutil.copyfile(sw_desc_enc, sw.fullfilename)
+            
+        if self.signtool:       
+            sw_desc_in =  os.path.join(self.temp.name, 'sw-description.plain' 
+                                                if self.aeskey and self.encryptswdesc else 'sw-description')
             sw_desc_out = os.path.join(self.temp.name, 'sw-description.sig')
             self.signtool.prepare_cmd(sw_desc_in, sw_desc_out)
             self.signtool.sign()

@@ -79,6 +79,15 @@ def main() -> None:
     )
 
     parser.add_argument(
+        "-t",
+        "--encrypt-swdesc",
+        action='store_const',
+        const=True,
+        default=False,
+        help="Encrypt sw-description",
+    )
+
+    parser.add_argument(
         "-a",
         "--artifactory",
         help="list of directories where artifacts are searched",
@@ -172,6 +181,7 @@ def main() -> None:
                                      artidirs,
                                      sign_option,
                                      key, iv,
+                                     args.encrypt_swdesc,
                                      args.no_compress)
         swu.process()
         swu.close()
