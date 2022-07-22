@@ -24,6 +24,7 @@ optional arguments:
   -k SIGN, --sign SIGN  RSA key or certificate to sign the SWU
   -s SW_DESCRIPTION, --sw-description SW_DESCRIPTION
                         sw-description template
+  -t, --encrypt-swdesc  Encrypt sw-description
   -a ARTIFACTORY, --artifactory ARTIFACTORY
                         list of directories where artifacts are searched
   -o SWU_FILE, --swu-file SWU_FILE
