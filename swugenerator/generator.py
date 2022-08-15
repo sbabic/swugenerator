@@ -61,6 +61,8 @@ class SWUGenerator:
                 logging.critical("Artifact %s not found" % entry['filename'])
                 exit(22)
 
+            new.newfilename = entry['filename']
+
             # Encrypt if required
             if 'encrypted' in entry and self.aeskey:
                 iv = self.aesiv
@@ -78,9 +80,8 @@ class SWUGenerator:
                     logging.critical("Wrong compression algorithm: %s" % cmp)
                     exit(1)
 
-                #new_path = os.path.join(self.temp.name, entry['filename']) + '.' + cmp
-                new_path = os.path.join(self.temp.name, entry['filename'])
-
+                new_path = os.path.join(self.temp.name, entry['filename']) + '.' + cmp
+                new.newfilename = entry['filename'] + '.' + cmp
                 if cmp == 'zlib':
                     cmd = ['gzip', '-f', '-9', '-n', '-c', '--rsyncable', new.fullfilename, '>', new_path]
                 else:
@@ -97,6 +98,8 @@ class SWUGenerator:
             self.artifacts.append(new)
         else:
             print("Artifact  %s already stored" % entry['filename'])
+
+        entry['filename'] = new.newfilename
         entry['sha256'] = new.getsha256()
 
     def find_files_in_swdesc(self, first):

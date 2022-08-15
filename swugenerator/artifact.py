@@ -10,6 +10,7 @@ import subprocess
 class Artifact:
     def __init__(self, filename: "") -> None:
         self.filename = filename
+        self.newfilename = filename
         self.fullfilename = filename
         self._available = False
         self.sha256 = ""
@@ -18,7 +19,7 @@ class Artifact:
     def exist(self):
         return os.path.exists(self.filename)
 
-    def computesha256(self):
+    def getsha256(self):
         m = hashlib.sha256()
         with open(os.path.join(self.fullfilename), 'rb') as f:
             while True:
@@ -35,13 +36,10 @@ class Artifact:
             fname = os.path.join(libdir, self.filename)
             if os.path.exists(fname):
                 self.fullfilename = fname
-                self.sha256 = self.computesha256()
+                self.sha256 = self.getsha256()
                 self.size = os.path.getsize(fname)
                 return True
         return False
-
-    def getsha256(self):
-        return self.sha256
 
     def getsize(self):
         return self.size
