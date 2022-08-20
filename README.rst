@@ -37,8 +37,8 @@ optional arguments:
 Description
 ===========
 
-`swugenerator` is a tool running on host to create and modify SWUpdate's Update
-files (SWU). SWU file contains a meta description of the release (`sw-description`), 
+``swugenerator`` is a tool running on host to create and modify SWUpdate's Update
+files (SWU). SWU file contains a meta description of the release (``sw-description``),
 and swugenerator adds components to a template passed from command line.
 This tool requires *openssl* to run and to sign the SWU. It is goal of the tool to fill
 the gap with Yocto/OE, where SWU generation is done by classes in the meta-swupdate layer,
@@ -51,3 +51,14 @@ The tool signs the SWU and can encrypt the artifacts. The tool parses the libcon
         - check if an artifact should be encrypted and encrypts it
         - sign sw-description with one of the methods accepted by SWUpdate
         - pack all artifacts into a SWU file
+
+Installation
+============
+
+To install ``swugenerator`` clone the repository, and from the main project folder run pip (pip3 required): ::
+
+    pip install .
+
+To uninstall: ::
+
+    pip uninstall swugenerator
