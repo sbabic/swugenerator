@@ -21,6 +21,7 @@ optional arguments:
   -h, --help            show this help message and exit
   -K ENCRYPTION_KEY_FILE, --encryption-key-file ENCRYPTION_KEY_FILE
                         AES Key to encrypt artifacts
+  -n, --no-compress     Do not compress files
   -k SIGN, --sign SIGN  RSA key or certificate to sign the SWU
   -s SW_DESCRIPTION, --sw-description SW_DESCRIPTION
                         sw-description template
