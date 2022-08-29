@@ -60,6 +60,24 @@ def main() -> None:
     )
 
     parser.add_argument(
+        "-e",
+        "--no-encrypt",
+        action='store_const',
+        const=True,
+        default=False,
+        help="Do not encrypt files",
+    )
+
+    parser.add_argument(
+        "-x",
+        "--no-ivt",
+        action='store_const',
+        const=True,
+        default=False,
+        help="Do not generate IV when encrypting",
+    )
+
+    parser.add_argument(
         "-k",
         "--sign",
         help=textwrap.dedent('''\
@@ -182,7 +200,9 @@ def main() -> None:
                                      sign_option,
                                      key, iv,
                                      args.encrypt_swdesc,
-                                     args.no_compress)
+                                     args.no_compress,
+                                     args.no_encrypt,
+                                     args.no_ivt)
         swu.process()
         swu.close()
     else:

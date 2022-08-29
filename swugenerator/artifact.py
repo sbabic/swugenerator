@@ -14,6 +14,7 @@ class Artifact:
         self.fullfilename = filename
         self._available = False
         self.sha256 = ""
+        self.ivt = ""
         self.size = 0
 
     def exist(self):

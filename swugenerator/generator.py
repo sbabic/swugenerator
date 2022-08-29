@@ -16,7 +16,7 @@ from swugenerator.artifact import Artifact
 
 
 class SWUGenerator:
-    def __init__(self, template, out, confvars, dirs, crypt, aeskey, firstiv, encrypt_swdesc=False, no_compress=False):
+    def __init__(self, template, out, confvars, dirs, crypt, aeskey, firstiv, encrypt_swdesc=False, no_compress=False, no_encrypt=False, no_ivt=False):
         self.swdescription = template
         self.artifacts = []
         self.out = open(out, 'wb')
@@ -32,6 +32,8 @@ class SWUGenerator:
         self.aesiv = firstiv
         self.encryptswdesc = encrypt_swdesc
         self.nocompress = no_compress
+        self.noencrypt = no_encrypt
+        self.noivt = no_ivt
 
     @staticmethod
     def generate_iv():
@@ -63,15 +65,6 @@ class SWUGenerator:
 
             new.newfilename = entry['filename']
 
-            # Encrypt if required
-            if 'encrypted' in entry and self.aeskey:
-                iv = self.aesiv
-                new_path = os.path.join(self.temp.name, entry['filename'])
-                new.encrypt(new_path, self.aeskey, iv)
-                new.fullfilename = new_path
-                # recompute sha256, now for the encrypted file
-                new.computesha256()
-                entry['ivt'] = iv
             if 'compressed' in entry and not self.nocompress:
                 cmp = entry['compressed']
                 if cmp == True:
@@ -80,8 +73,8 @@ class SWUGenerator:
                     logging.critical("Wrong compression algorithm: %s" % cmp)
                     exit(1)
 
-                new_path = os.path.join(self.temp.name, entry['filename']) + '.' + cmp
-                new.newfilename = entry['filename'] + '.' + cmp
+                new_path = os.path.join(self.temp.name, new.newfilename) + '.' + cmp
+                new.newfilename = new.newfilename + '.' + cmp
                 if cmp == 'zlib':
                     cmd = ['gzip', '-f', '-9', '-n', '-c', '--rsyncable', new.fullfilename, '>', new_path]
                 else:
@@ -95,12 +88,30 @@ class SWUGenerator:
 
                 new.fullfilename = new_path
 
+            # Encrypt if required
+            if 'encrypted' in entry and not self.noencrypt:
+                if not self.aeskey:
+                    logging.critical("%s must be encrypted, but no encryption key is given" % entry['filename'] )
+                if self.noivt:
+                    iv = self.aesiv
+                else:
+                    iv = self.generate_iv()
+
+                new.newfilename = new.newfilename + '.' + 'enc'
+                new_path = os.path.join(self.temp.name, new.newfilename)
+                new.encrypt(new_path, self.aeskey, iv)
+                new.fullfilename = new_path
+                # recompute sha256, now for the encrypted file
+                entry['ivt'] = iv
+                new.ivt = iv
+
             self.artifacts.append(new)
         else:
             print("Artifact  %s already stored" % entry['filename'])
 
         entry['filename'] = new.newfilename
         entry['sha256'] = new.getsha256()
+        entry['ivt'] = new.ivt
 
     def find_files_in_swdesc(self, first):
         for n, val in first.items():
