@@ -124,20 +124,36 @@ def main() -> None:
         help="configuration file",
     )
 
+    parser.add_argument(
+        "-l",
+        "--loglevel",
+        help="set log level, default is WARNING",
+    )
     parser.add_argument('command', metavar='command', default=[], help='command to be executed (create)')
 
     args = parser.parse_args()
 
+    if args.loglevel:
+        if args.loglevel == "DEBUG":
+            logging.basicConfig(level=logging.DEBUG)
+        if args.loglevel == "INFO":
+            logging.basicConfig(level=logging.INFO)
+        if args.loglevel == "ERROR":
+            logging.basicConfig(level=logging.ERROR)
+        if args.loglevel == "CRITICAL":
+            logging.basicConfig(level=logging.CRITICAL)
+
     # Read configuration file if any
     vars = {}
     if args.config and args.config != "":
-        print ("Reading configuration file %s" % args.config)
+        logging.info("Reading configuration file %s" % args.config)
+
         with codecs.open(args.config, 'r', 'utf-8') as f:
             config = libconf.load(f)
             for key, keydict in config.items():
                 if key == 'variables':
                     for varname, varvalue in keydict.items():
-                        print("VAR = %s VAL = %s" % (varname, varvalue))
+                        logging.debug("VAR = %s VAL = %s" % (varname, varvalue))
                         vars[varname] = varvalue
             f.close()
 
