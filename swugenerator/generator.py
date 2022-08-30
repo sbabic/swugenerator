@@ -164,7 +164,10 @@ class SWUGenerator:
         self.save_swdescription(os.path.join(self.temp.name, sw.filename), swdesc)
 
         # Encrypt sw-description if required
-        if self.aeskey and self.encryptswdesc:
+        if self.encryptswdesc:
+            if not self.aeskey:
+                logging.critical("sw-description must be encrypted, but no encryption key is given")
+
             iv = self.aesiv
             sw_desc_plain  = os.path.join(self.temp.name, 'sw-description.plain')
             sw_desc_enc    = os.path.join(self.temp.name, 'sw-description.enc')
