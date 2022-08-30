@@ -215,7 +215,7 @@ class SWUGenerator:
 
     def swupdate_get_sha256(self, filename):
         a = Artifact(filename)
-        return a.computesha256()
+        return a.getsha256()
 
     def swupdate_get_size(self, filename):
         a = Artifact(filename)
