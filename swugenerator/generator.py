@@ -161,7 +161,15 @@ class SWUGenerator:
         swdesc = re.sub(r"\\n", '\n', swdesc)
         swdesc = re.sub(r"\\t", '\t', swdesc)
 
-        self.save_swdescription(os.path.join(self.temp.name, sw.filename), swdesc)
+        swdesc_filename = os.path.join(self.temp.name, sw.filename)
+        self.save_swdescription(swdesc_filename, swdesc)
+
+
+        if self.signtool:       
+            sw_desc_in = swdesc_filename
+            sw_desc_out = os.path.join(self.temp.name, 'sw-description.sig')
+            self.signtool.prepare_cmd(sw_desc_in, sw_desc_out)
+            self.signtool.sign()
 
         # Encrypt sw-description if required
         if self.encryptswdesc:
@@ -169,18 +177,10 @@ class SWUGenerator:
                 logging.critical("sw-description must be encrypted, but no encryption key is given")
 
             iv = self.aesiv
-            sw_desc_plain  = os.path.join(self.temp.name, 'sw-description.plain')
-            sw_desc_enc    = os.path.join(self.temp.name, 'sw-description.enc')
-            shutil.copyfile(sw.fullfilename, sw_desc_plain)
-            sw.encrypt(sw_desc_enc, self.aeskey, iv)
-            shutil.copyfile(sw_desc_enc, sw.fullfilename)
-            
-        if self.signtool:       
-            sw_desc_in =  os.path.join(self.temp.name, 'sw-description.plain' 
-                                                if self.aeskey and self.encryptswdesc else 'sw-description')
-            sw_desc_out = os.path.join(self.temp.name, 'sw-description.sig')
-            self.signtool.prepare_cmd(sw_desc_in, sw_desc_out)
-            self.signtool.sign()
+            sw.fullfilename = swdesc_filename
+            swdesc_enc = swdesc_filename + ".enc"
+            sw.encrypt(swdesc_enc, self.aeskey, iv)
+            shutil.copyfile(swdesc_enc, sw.fullfilename)
 
         for artifact in self.artifacts:
             self.cpiofile.addartifacttoswu(artifact.fullfilename)
