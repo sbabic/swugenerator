@@ -111,7 +111,8 @@ class SWUGenerator:
 
         entry['filename'] = new.newfilename
         entry['sha256'] = new.getsha256()
-        entry['ivt'] = new.ivt
+        if 'encrypted' in entry:
+            entry['ivt'] = new.ivt
 
     def find_files_in_swdesc(self, first):
         for n, val in first.items():
