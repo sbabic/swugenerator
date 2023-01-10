@@ -21,7 +21,7 @@ def extract_keys(keyfile):
         with open(keyfile, "r") as f:
             lines = f.readlines()
     except IOError:
-        logging.fatal("Failed to open file with keys %s" % (keyfile))
+        logging.fatal("Failed to open file with keys %s", keyfile)
         exit(1)
 
     key, iv = None, None
@@ -150,14 +150,14 @@ def main() -> None:
     # Read configuration file if any
     vars = {}
     if args.config and args.config != "":
-        logging.info("Reading configuration file %s" % args.config)
+        logging.info("Reading configuration file %s", args.config)
 
         with codecs.open(args.config, "r", "utf-8") as f:
             config = libconf.load(f)
             for key, keydict in config.items():
                 if key == "variables":
                     for varname, varvalue in keydict.items():
-                        logging.debug("VAR = %s VAL = %s" % (varname, varvalue))
+                        logging.debug("VAR = %s VAL = %s", varname, varvalue)
                         vars[varname] = varvalue
             f.close()
 

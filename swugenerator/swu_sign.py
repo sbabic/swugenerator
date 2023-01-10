@@ -29,7 +29,7 @@ class SWUSign:
             subprocess.run(" ".join(self.signcmd), shell=True, check=True, text=True)
         except:
             logging.critical(
-                "SWU cannot be signed, signing command was %s" % self.signcmd
+                "SWU cannot be signed, signing command was %s", self.signcmd
             )
             exit(1)
 
