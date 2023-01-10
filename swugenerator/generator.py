@@ -60,6 +60,7 @@ class SWUGenerator:
             f.close()
 
     def close(self):
+        self.temp.cleanup()
         self.cpiofile.close()
         self.out.close()
 
