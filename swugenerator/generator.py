@@ -39,7 +39,7 @@ class SWUGenerator:
         self.cpiofile = SWUFile(self.out)
         self.vars = confvars
         self.lines = []
-        self.conf = {}
+        self.conf = libconf.AttrDict()
         self.filelist = []
         self.temp = TemporaryDirectory()
         self.signtool = crypt
