@@ -7,7 +7,7 @@ import subprocess
 
 
 class Artifact:
-    def __init__(self, filename: "") -> None:
+    def __init__(self, filename: str) -> None:
         self.filename = filename
         self.newfilename = filename
         self.fullfilename = filename
