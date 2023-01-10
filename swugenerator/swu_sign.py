@@ -37,7 +37,7 @@ class SWUSign:
 
 class SWUSignCMS(SWUSign):
     def __init__(self, key, cert, passin):
-        super(SWUSignCMS, self).__init__()
+        super().__init__()
         self.type = "CMS"
         self.key = key
         self.cert = cert
@@ -68,7 +68,7 @@ class SWUSignCMS(SWUSign):
 
 class SWUSignRSA(SWUSign):
     def __init__(self, key, passin):
-        super(SWUSignRSA, self).__init__()
+        super().__init__()
         self.type = "RSA"
         self.key = key
         self.passin = passin
@@ -83,7 +83,7 @@ class SWUSignRSA(SWUSign):
 
 class SWUSignCustom(SWUSign):
     def __init__(self, cmd):
-        super(SWUSignCustom, self).__init__()
+        super().__init__()
         self.type = "CUSTOM"
         self.custom = cmd.split()
 
@@ -96,7 +96,7 @@ class SWUSignCustom(SWUSign):
 # Note: tested with Nitrokey HSM
 class SWUSignPKCS11(SWUSign):
     def __init__(self, pin):
-        super(SWUSignPKCS11, self).__init__()
+        super().__init__()
         self.type = "PKCS11"
         self.custom = ["--pin"]
         self.custom.append(pin)
