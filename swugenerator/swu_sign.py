@@ -1,6 +1,7 @@
 # Copyright (C) 2022 Stefano Babic
 #
 # SPDX-License-Identifier: GPLv3
+import copy
 import logging
 import subprocess
 import sys
@@ -86,10 +87,8 @@ class SWUSignCustom(SWUSign):
         self.type = "CUSTOM"
         self.custom = cmd.split()
 
-    def prepare_cmd(self, sw_desc_in, sw_desc_sig=None):
-        self.signcmd = []
-        for i in range(len(self.custom)):
-            self.signcmd.append(self.custom[i])
+    def prepare_cmd(self, *_):
+        self.signcmd = copy.deepcopy(self.custom)
 
 
 # Note: tested with Nitrokey HSM
