@@ -1,7 +1,6 @@
 # Copyright (C) 2022 Stefano Babic
 #
 # SPDX-License-Identifier: GPLv3
-
 import hashlib
 import os
 import subprocess

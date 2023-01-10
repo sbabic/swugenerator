@@ -4,17 +4,18 @@
 #
 # SPDX-License-Identifier: GPLv3
 
-import argparse, textwrap
+import argparse
+import codecs
 import logging
 import os
 import sys
+import textwrap
 from pathlib import Path
-from swugenerator import __about__
-from swugenerator import generator
-from swugenerator.swu_sign import *
 
 import libconf
-import codecs
+
+from swugenerator import __about__, generator
+from swugenerator.swu_sign import SWUSignCMS, SWUSignCustom, SWUSignPKCS11, SWUSignRSA
 
 
 def extract_keys(keyfile):

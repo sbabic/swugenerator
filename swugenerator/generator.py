@@ -1,16 +1,17 @@
 # Copyright (C) 2022 Stefano Babic
 #
 # SPDX-License-Identifier: GPLv3
+import codecs
 import logging
 import os
-import shutil
-import sys
 import re
-import codecs
-import libconf
+import shutil
 import secrets
 import subprocess
+import sys
 from tempfile import TemporaryDirectory
+
+import libconf
 
 from swugenerator.swu_file import SWUFile
 from swugenerator.artifact import Artifact
@@ -247,8 +248,6 @@ class SWUGenerator:
         self.lines = write_lines
 
     def _exec_functions(self):
-        import re
-
         for index, line in enumerate(self.lines):
             m = re.match(
                 r"^(?P<before_placeholder>.+)\$(?P<function_name>\w+)\((?P<parms>.+)\)(?P<after_placeholder>.+)$",

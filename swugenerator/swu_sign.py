@@ -1,8 +1,8 @@
 # Copyright (C) 2022 Stefano Babic
 #
 # SPDX-License-Identifier: GPLv3
-import subprocess
 import logging
+import subprocess
 import sys
 
 
