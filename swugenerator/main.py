@@ -150,7 +150,7 @@ def main() -> None:
             logging.basicConfig(level=logging.CRITICAL)
 
     # Read configuration file if any
-    vars = {}
+    config_vars = {}
     if args.config and args.config != "":
         logging.info("Reading configuration file %s", args.config)
 
@@ -160,7 +160,7 @@ def main() -> None:
                 if key == "variables":
                     for varname, varvalue in keydict.items():
                         logging.debug("VAR = %s VAL = %s", varname, varvalue)
-                        vars[varname] = varvalue
+                        config_vars[varname] = varvalue
             f.close()
 
     # Signing
@@ -210,15 +210,15 @@ def main() -> None:
     artidirs.append(os.getcwd())
     if args.artifactory:
         dirs = args.artifactory.split(",")
-        for dir in dirs:
-            deploy = Path(dir).resolve()
+        for directory in dirs:
+            deploy = Path(directory).resolve()
             artidirs.append(deploy)
 
     if args.command == "create":
         swu = generator.SWUGenerator(
             args.sw_description,
             args.swu_file,
-            vars,
+            config_vars,
             artidirs,
             sign_option,
             key,
