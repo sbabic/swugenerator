@@ -7,24 +7,22 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='swugenerator',
-    version='0.1',
+    name="swugenerator",
+    version="0.1",
     packages=find_packages(),
-    url='https://github.com/sbabic/swugenerator',
-    license='GPLv3',
-    author='Stefano Babic',
-    author_email='stefano.babic@babic.homelinux.org',
-    description='SWU Package generator for SWUpdate',
+    url="https://github.com/sbabic/swugenerator",
+    license="GPLv3",
+    author="Stefano Babic",
+    author_email="stefano.babic@babic.homelinux.org",
+    description="SWU Package generator for SWUpdate",
     entry_points={
-        'console_scripts': [
-            'swugenerator=swugenerator.main:main',
+        "console_scripts": [
+            "swugenerator=swugenerator.main:main",
         ],
     },
-
     install_requires=[
-        'libconf~=2.0.1',
-        'setuptools~=57.0.0',
+        "libconf~=2.0.1",
+        "setuptools~=57.0.0",
     ],
-
-    python_requires='>=3.6',
+    python_requires=">=3.6",
 )

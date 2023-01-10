@@ -24,4 +24,3 @@ __email__ = "stefano.babic@babic.homelinux.org"
 
 __license__ = "GPL version 3"
 __copyright__ = "Copyright 2022 %s" % __author__
-

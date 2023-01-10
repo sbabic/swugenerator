@@ -22,7 +22,7 @@ class Artifact:
 
     def getsha256(self):
         m = hashlib.sha256()
-        with open(os.path.join(self.fullfilename), 'rb') as f:
+        with open(os.path.join(self.fullfilename), "rb") as f:
             while True:
                 data = f.read(1024)
                 if not data:
@@ -46,6 +46,14 @@ class Artifact:
         return self.size
 
     def encrypt(self, out, key, iv):
-        enc_args = ["openssl", "enc", "-aes-256-cbc", "-in", self.fullfilename, "-out", out]
+        enc_args = [
+            "openssl",
+            "enc",
+            "-aes-256-cbc",
+            "-in",
+            self.fullfilename,
+            "-out",
+            out,
+        ]
         enc_args += ["-K", key, "-iv", iv, "-nosalt"]
         subprocess.run(enc_args, check=True)

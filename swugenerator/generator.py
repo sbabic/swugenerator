@@ -16,10 +16,23 @@ from swugenerator.artifact import Artifact
 
 
 class SWUGenerator:
-    def __init__(self, template, out, confvars, dirs, crypt, aeskey, firstiv, encrypt_swdesc=False, no_compress=False, no_encrypt=False, no_ivt=False):
+    def __init__(
+        self,
+        template,
+        out,
+        confvars,
+        dirs,
+        crypt,
+        aeskey,
+        firstiv,
+        encrypt_swdesc=False,
+        no_compress=False,
+        no_encrypt=False,
+        no_ivt=False,
+    ):
         self.swdescription = template
         self.artifacts = []
-        self.out = open(out, 'wb')
+        self.out = open(out, "wb")
         self.artifactory = dirs
         self.cpiofile = SWUFile(self.out)
         self.vars = confvars
@@ -40,7 +53,7 @@ class SWUGenerator:
         return secrets.token_hex(16)
 
     def _read_swdesc(self):
-        with codecs.open(self.swdescription, 'r') as f:
+        with codecs.open(self.swdescription, "r") as f:
             self.lines = f.readlines()
             f.close()
 
@@ -49,70 +62,94 @@ class SWUGenerator:
         self.out.close()
 
     def process_entry(self, entry):
-        if 'filename' not in entry:
+        if "filename" not in entry:
             return
         new = None
         for image in self.artifacts:
-            if image.filename == entry['filename']:
+            if image.filename == entry["filename"]:
                 new = image
                 break
         if not new:
-            logging.debug("New artifact  %s" % entry['filename'])
-            new = Artifact(entry['filename'])
+            logging.debug("New artifact  %s" % entry["filename"])
+            new = Artifact(entry["filename"])
             if not new.findfile(self.artifactory):
-                logging.critical("Artifact %s not found" % entry['filename'])
+                logging.critical("Artifact %s not found" % entry["filename"])
                 exit(22)
 
-            new.newfilename = entry['filename']
+            new.newfilename = entry["filename"]
 
-            if 'compressed' in entry and not self.nocompress:
-                cmp = entry['compressed']
+            if "compressed" in entry and not self.nocompress:
+                cmp = entry["compressed"]
                 if cmp == True:
-                    cmp = 'zlib'
-                if cmp != 'zlib' and cmp != 'zstd':
+                    cmp = "zlib"
+                if cmp != "zlib" and cmp != "zstd":
                     logging.critical("Wrong compression algorithm: %s" % cmp)
                     exit(1)
 
-                new_path = os.path.join(self.temp.name, new.newfilename) + '.' + cmp
-                new.newfilename = new.newfilename + '.' + cmp
-                if cmp == 'zlib':
-                    cmd = ['gzip', '-f', '-9', '-n', '-c', '--rsyncable', new.fullfilename, '>', new_path]
+                new_path = os.path.join(self.temp.name, new.newfilename) + "." + cmp
+                new.newfilename = new.newfilename + "." + cmp
+                if cmp == "zlib":
+                    cmd = [
+                        "gzip",
+                        "-f",
+                        "-9",
+                        "-n",
+                        "-c",
+                        "--rsyncable",
+                        new.fullfilename,
+                        ">",
+                        new_path,
+                    ]
                 else:
-                    cmd = ['zstd', '-z', '-k', '-T0', '-c', new.fullfilename, '>', new_path]
+                    cmd = [
+                        "zstd",
+                        "-z",
+                        "-k",
+                        "-T0",
+                        "-c",
+                        new.fullfilename,
+                        ">",
+                        new_path,
+                    ]
 
                 try:
-                    subprocess.run(' '.join(cmd), shell=True, check=True, text=True)
+                    subprocess.run(" ".join(cmd), shell=True, check=True, text=True)
                 except:
-                    logging.critical('Cannot compress %s with %s' % (entry['filename'], cmd))
+                    logging.critical(
+                        "Cannot compress %s with %s" % (entry["filename"], cmd)
+                    )
                     exit(1)
 
                 new.fullfilename = new_path
 
             # Encrypt if required
-            if 'encrypted' in entry and not self.noencrypt:
+            if "encrypted" in entry and not self.noencrypt:
                 if not self.aeskey:
-                    logging.critical("%s must be encrypted, but no encryption key is given" % entry['filename'] )
+                    logging.critical(
+                        "%s must be encrypted, but no encryption key is given"
+                        % entry["filename"]
+                    )
                 if self.noivt:
                     iv = self.aesiv
                 else:
                     iv = self.generate_iv()
 
-                new.newfilename = new.newfilename + '.' + 'enc'
+                new.newfilename = new.newfilename + "." + "enc"
                 new_path = os.path.join(self.temp.name, new.newfilename)
                 new.encrypt(new_path, self.aeskey, iv)
                 new.fullfilename = new_path
                 # recompute sha256, now for the encrypted file
-                entry['ivt'] = iv
+                entry["ivt"] = iv
                 new.ivt = iv
 
             self.artifacts.append(new)
         else:
-            logging.debug("Artifact  %s already stored" % entry['filename'])
+            logging.debug("Artifact  %s already stored" % entry["filename"])
 
-        entry['filename'] = new.newfilename
-        entry['sha256'] = new.getsha256()
-        if 'encrypted' in entry:
-            entry['ivt'] = new.ivt
+        entry["filename"] = new.newfilename
+        entry["sha256"] = new.getsha256()
+        if "encrypted" in entry:
+            entry["ivt"] = new.ivt
 
     def find_files_in_swdesc(self, first):
         for n, val in first.items():
@@ -123,11 +160,11 @@ class SWUGenerator:
                     self.find_files_in_swdesc(t)
             else:
                 logging.debug("%s = %s" % (n, val))
-                if n == 'filename':
+                if n == "filename":
                     self.filelist.append(first)
 
     def save_swdescription(self, filename, s):
-        fp = codecs.open(filename, 'w', 'utf-8')
+        fp = codecs.open(filename, "w", "utf-8")
         fp.write(s)
         fp.close()
 
@@ -142,12 +179,12 @@ class SWUGenerator:
         self.conf = libconf.loads(swdesc)
         self.find_files_in_swdesc(self.conf.software)
 
-        sw = Artifact('sw-description')
+        sw = Artifact("sw-description")
         sw.fullfilename = os.path.join(self.temp.name, sw.filename)
         self.artifacts.append(sw)
         if self.signtool:
-            sig = Artifact('sw-description.sig')
-            sig.fullfilename = os.path.join(self.temp.name, 'sw-description.sig')
+            sig = Artifact("sw-description.sig")
+            sig.fullfilename = os.path.join(self.temp.name, "sw-description.sig")
             self.artifacts.append(sig)
 
         for entry in self.filelist:
@@ -159,23 +196,24 @@ class SWUGenerator:
         # of an attribute. This happens to the embedded-script
         # and the script results to be in just one line.
         # Reinsert \n and \t that was removed by libconf
-        swdesc = re.sub(r"\\n", '\n', swdesc)
-        swdesc = re.sub(r"\\t", '\t', swdesc)
+        swdesc = re.sub(r"\\n", "\n", swdesc)
+        swdesc = re.sub(r"\\t", "\t", swdesc)
 
         swdesc_filename = os.path.join(self.temp.name, sw.filename)
         self.save_swdescription(swdesc_filename, swdesc)
 
-
-        if self.signtool:       
+        if self.signtool:
             sw_desc_in = swdesc_filename
-            sw_desc_out = os.path.join(self.temp.name, 'sw-description.sig')
+            sw_desc_out = os.path.join(self.temp.name, "sw-description.sig")
             self.signtool.prepare_cmd(sw_desc_in, sw_desc_out)
             self.signtool.sign()
 
         # Encrypt sw-description if required
         if self.encryptswdesc:
             if not self.aeskey:
-                logging.critical("sw-description must be encrypted, but no encryption key is given")
+                logging.critical(
+                    "sw-description must be encrypted, but no encryption key is given"
+                )
 
             iv = self.aesiv
             sw.fullfilename = swdesc_filename
@@ -191,10 +229,16 @@ class SWUGenerator:
         for line in self.lines:
             while True:
                 m = re.match(
-                    r"^(?P<before_placeholder>.+)@@(?P<variable_name>\w+)@@(?P<after_placeholder>.+)$", line)
+                    r"^(?P<before_placeholder>.+)@@(?P<variable_name>\w+)@@(?P<after_placeholder>.+)$",
+                    line,
+                )
                 if m:
-                    variable_value = self.vars[m.group('variable_name')]
-                    line = m.group('before_placeholder') + variable_value + m.group('after_placeholder')
+                    variable_value = self.vars[m.group("variable_name")]
+                    line = (
+                        m.group("before_placeholder")
+                        + variable_value
+                        + m.group("after_placeholder")
+                    )
                     continue
                 else:
                     break
@@ -203,14 +247,23 @@ class SWUGenerator:
 
     def _exec_functions(self):
         import re
+
         for index, line in enumerate(self.lines):
             m = re.match(
                 r"^(?P<before_placeholder>.+)\$(?P<function_name>\w+)\((?P<parms>.+)\)(?P<after_placeholder>.+)$",
-                line)
+                line,
+            )
             if m:
-                fun = "self." + m.group('function_name') + "(\"" + m.group('parms') + "\")"
+                fun = (
+                    "self." + m.group("function_name") + '("' + m.group("parms") + '")'
+                )
                 ret = eval(fun)
-                line = m.group('before_placeholder') + ret + m.group('after_placeholder') + "\n"
+                line = (
+                    m.group("before_placeholder")
+                    + ret
+                    + m.group("after_placeholder")
+                    + "\n"
+                )
                 self.lines[index] = line
 
     def setenckey(self, k, iv):

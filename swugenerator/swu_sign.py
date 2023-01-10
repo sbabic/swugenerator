@@ -26,9 +26,11 @@ class SWUSign:
     def sign(self):
         result = None
         try:
-            subprocess.run(' '.join(self.signcmd), shell=True, check=True,  text=True)
+            subprocess.run(" ".join(self.signcmd), shell=True, check=True, text=True)
         except:
-            logging.critical('SWU cannot be signed, signing command was %s' % self.signcmd)
+            logging.critical(
+                "SWU cannot be signed, signing command was %s" % self.signcmd
+            )
             exit(1)
 
 
@@ -41,8 +43,25 @@ class SWUSignCMS(SWUSign):
         self.passin = passin
 
     def prepare_cmd(self, sw_desc_in, sw_desc_sig):
-        self.signcmd = ["openssl", "cms", "-sign", "-in", sw_desc_in, "-out", sw_desc_sig, "-signer", self.cert]
-        self.signcmd += ["-inkey", self.key, "-outform", "DER", "-nosmimecap", "-binary"]
+        self.signcmd = [
+            "openssl",
+            "cms",
+            "-sign",
+            "-in",
+            sw_desc_in,
+            "-out",
+            sw_desc_sig,
+            "-signer",
+            self.cert,
+        ]
+        self.signcmd += [
+            "-inkey",
+            self.key,
+            "-outform",
+            "DER",
+            "-nosmimecap",
+            "-binary",
+        ]
         self.signcmd += self.get_passwd_file_args()
 
 
@@ -54,9 +73,11 @@ class SWUSignRSA(SWUSign):
         self.passin = passin
 
     def prepare_cmd(self, sw_desc_in, sw_desc_sig):
-        self.signcmd = ["openssl", "dgst", "-sha256", "-sign", self.key] + \
-                       self.get_passwd_file_args() +\
-                       ["-out", sw_desc_sig, sw_desc_in]
+        self.signcmd = (
+            ["openssl", "dgst", "-sha256", "-sign", self.key]
+            + self.get_passwd_file_args()
+            + ["-out", sw_desc_sig, sw_desc_in]
+        )
 
 
 class SWUSignCustom(SWUSign):
@@ -76,9 +97,17 @@ class SWUSignPKCS11(SWUSign):
     def __init__(self, pin):
         super(SWUSignPKCS11, self).__init__()
         self.type = "PKCS11"
-        self.custom = ['--pin']
+        self.custom = ["--pin"]
         self.custom.append(pin)
 
     def prepare_cmd(self, sw_desc_in, sw_desc_sig):
-        self.signcmd = ['pkcs11-tool', '-s', '-m ', 'SHA256-RSA-PKCS', '-i', sw_desc_in, '-o', sw_desc_sig] + self.custom
-
+        self.signcmd = [
+            "pkcs11-tool",
+            "-s",
+            "-m ",
+            "SHA256-RSA-PKCS",
+            "-i",
+            sw_desc_in,
+            "-o",
+            sw_desc_sig,
+        ] + self.custom
