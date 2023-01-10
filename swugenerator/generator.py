@@ -82,9 +82,9 @@ class SWUGenerator:
 
             if "compressed" in entry and not self.nocompress:
                 cmp = entry["compressed"]
-                if cmp == True:
+                if cmp:
                     cmp = "zlib"
-                if cmp != "zlib" and cmp != "zstd":
+                if cmp not in ("zlib", "zstd"):
                     logging.critical("Wrong compression algorithm: %s", cmp)
                     sys.exit(1)
 
@@ -116,7 +116,7 @@ class SWUGenerator:
 
                 try:
                     subprocess.run(" ".join(cmd), shell=True, check=True, text=True)
-                except:
+                except subprocess.CalledProcessError:
                     logging.critical(
                         "Cannot compress %s with %s", entry["filename"], cmd
                     )
@@ -165,10 +165,9 @@ class SWUGenerator:
                 if n == "filename":
                     self.filelist.append(first)
 
-    def save_swdescription(self, filename, s):
-        fp = codecs.open(filename, "w", "utf-8")
-        fp.write(s)
-        fp.close()
+    def save_swdescription(self, filename, contents):
+        with codecs.open(filename, "w", "utf-8") as swd:
+            swd.write(contents)
 
     def process(self):
         self._read_swdesc()
