@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPLv3
 import subprocess
 import logging
+import sys
 
 
 class SWUSign:
@@ -31,7 +32,7 @@ class SWUSign:
             logging.critical(
                 "SWU cannot be signed, signing command was %s", self.signcmd
             )
-            exit(1)
+            sys.exit(1)
 
 
 class SWUSignCMS(SWUSign):

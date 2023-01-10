@@ -7,6 +7,7 @@
 import argparse, textwrap
 import logging
 import os
+import sys
 from pathlib import Path
 from swugenerator import __about__
 from swugenerator import generator
@@ -22,7 +23,7 @@ def extract_keys(keyfile):
             lines = f.readlines()
     except IOError:
         logging.fatal("Failed to open file with keys %s", keyfile)
-        exit(1)
+        sys.exit(1)
 
     key, iv = None, None
     for line in lines:
@@ -169,7 +170,7 @@ def main() -> None:
         if cmd == "CMS":
             if len(sign_parms) < 3:
                 logging.critical("CMS requires private key and certificate")
-                exit(1)
+                sys.exit(1)
             # Format : CMS,<private key>,<certificate used to sign>,<file with password>
             if len(sign_parms) == 4:
                 sign_option = SWUSignCMS(sign_parms[1], sign_parms[2], sign_parms[3])
@@ -179,7 +180,7 @@ def main() -> None:
         if cmd == "RSA":
             if len(sign_parms) < 2:
                 logging.critical("RSA requires private key")
-                exit(1)
+                sys.exit(1)
             # Format : RSA,<private key>,<file with password>
             if len(sign_parms) == 3:
                 sign_option = SWUSignRSA(sign_parms[1], sign_parms[2])
@@ -190,13 +191,13 @@ def main() -> None:
             # Format : PKCS11,<pin>>
             if len(sign_parms) < 2:
                 logging.critical("PKCS11 requires URI")
-                exit(1)
+                sys.exit(1)
             sign_option = SWUSignPKCS11(sign_parms[1])
         if cmd == "CUSTOM":
             # Format : PKCS11,<custom command>>
             if len(sign_parms) < 2:
                 logging.critical("PKCS11 requires URI")
-                exit(1)
+                sys.exit(1)
             sign_option = SWUSignCustom(sign_parms[1])
 
     key = None

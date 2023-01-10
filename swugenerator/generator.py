@@ -4,6 +4,7 @@
 import logging
 import os
 import shutil
+import sys
 import re
 import codecs
 import libconf
@@ -74,7 +75,7 @@ class SWUGenerator:
             new = Artifact(entry["filename"])
             if not new.findfile(self.artifactory):
                 logging.critical("Artifact %s not found", entry["filename"])
-                exit(22)
+                sys.exit(22)
 
             new.newfilename = entry["filename"]
 
@@ -84,7 +85,7 @@ class SWUGenerator:
                     cmp = "zlib"
                 if cmp != "zlib" and cmp != "zstd":
                     logging.critical("Wrong compression algorithm: %s", cmp)
-                    exit(1)
+                    sys.exit(1)
 
                 new_path = os.path.join(self.temp.name, new.newfilename) + "." + cmp
                 new.newfilename = new.newfilename + "." + cmp
@@ -118,7 +119,7 @@ class SWUGenerator:
                     logging.critical(
                         "Cannot compress %s with %s", entry["filename"], cmd
                     )
-                    exit(1)
+                    sys.exit(1)
 
                 new.fullfilename = new_path
 
@@ -126,7 +127,8 @@ class SWUGenerator:
             if "encrypted" in entry and not self.noencrypt:
                 if not self.aeskey:
                     logging.critical(
-                        "%s must be encrypted, but no encryption key is given", entry["filename"]
+                        "%s must be encrypted, but no encryption key is given",
+                        entry["filename"],
                     )
                 if self.noivt:
                     iv = self.aesiv
