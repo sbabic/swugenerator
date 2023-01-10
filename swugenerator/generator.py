@@ -11,7 +11,7 @@ import secrets
 import subprocess
 from tempfile import TemporaryDirectory
 
-from swugenerator.SWUFile import swufile
+from swugenerator.swu_file import SWUFile
 from swugenerator.artifact import Artifact
 
 
@@ -21,7 +21,7 @@ class SWUGenerator:
         self.artifacts = []
         self.out = open(out, 'wb')
         self.artifactory = dirs
-        self.cpiofile = swufile(self.out)
+        self.cpiofile = SWUFile(self.out)
         self.vars = confvars
         self.lines = []
         self.conf = {}

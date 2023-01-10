@@ -13,7 +13,7 @@ class CPIOException(Exception):
     pass
 
 
-class swufile:
+class SWUFile:
     def __init__(self, outfile):
         self.position = 0
         """

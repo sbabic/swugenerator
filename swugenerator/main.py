@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 from swugenerator import __about__
 from swugenerator import generator
-from swugenerator.SWUSign import *
+from swugenerator.swu_sign import *
 
 import libconf
 import codecs
