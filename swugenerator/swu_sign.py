@@ -18,7 +18,7 @@ class SWUSign:
     def get_passwd_file_args(self):
         passwd_args = []
         if self.passin:
-            passwd_args = ["-passin", "file:%s" % self.passin]
+            passwd_args = ["-passin", f"file:{self.passin}"]
         return passwd_args
 
     def set_password_file(self, passin):

@@ -111,7 +111,7 @@ class SWUFile:
             # UNIX epoch overflow, negative timestamps and so on...
             if (value > 0xFFFFFFFF) or (value < 0):
                 raise CPIOException("STOP: value out of range", i, value)
-            s = "%08X" % value
+            s = f"{value:08X}"
             self.outfile.write(bytes(s, "ascii"))
             self.position += len(s)
 
