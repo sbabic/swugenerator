@@ -41,7 +41,7 @@ def main() -> None:
     # ArgumentParser {{{
     parser = argparse.ArgumentParser(
         prog=__about__.__title__,
-        description=__about__.__summary__,
+        description=__about__.__summary__ + " " + __about__.__version__,
         fromfile_prefix_chars="@",
         formatter_class=argparse.RawTextHelpFormatter,
     )
