@@ -14,7 +14,7 @@ __all__ = [
 ]
 
 __title__ = "SWUGenerator"
-__summary__ = "Generator SWU Packages for SWUpdate"
+__summary__ = "SWU Package Generator for SWUpdate"
 __uri__ = "https://github.com/sbabic/swugenerator"
 
 __version__ = "0.2"
