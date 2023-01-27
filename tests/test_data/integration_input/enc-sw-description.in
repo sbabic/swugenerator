@@ -1,0 +1,95 @@
+software =
+{
+        version = "@@UPDATE_VERSION@@";
+        description = "Firmware update for @@PRODUCT@@";
+
+        hardware-compatibility: [ "1.0", "1.2", "1.3"];
+
+        /* partitions tag is used to resize UBI partitions */
+        partitions: ( /* UBI Volumes */
+                {
+                        name = "rootfs";
+                        device = "mtd4";
+                        size = 104896512; /* in bytes */
+                },
+                {
+                        name = "data";
+                        device = "mtd5";
+                        size = 50448384; /* in bytes */
+                }
+        );
+
+
+        images: (
+                {
+                        filename = "rootfs.ubifs";
+                        volume = "rootfs";
+                        encrypted = true;
+                },
+                {
+                        filename = "swupdate.ext3.gz.u-boot";
+                        volume = "fs_recovery";
+                        encrypted = true;
+                },
+                {
+                        filename = "sdcard.ext3.gz";
+                        device = "/dev/mmcblk0p1";
+                        compressed = "zlib";
+                        encrypted = true;
+                },
+                {
+                        filename = "bootlogo.bmp";
+                        volume = "splash";
+                        encrypted = true;
+                },
+                {
+                        filename = "uImage.bin";
+                        volume = "kernel";
+                        encrypted = true;
+                },
+                {
+                        filename = "fpga.txt";
+                        type = "fpga";
+                        encrypted = true;
+                },
+                {
+                        filename = "bootloader-env";
+                        type = "bootloader";
+                        encrypted = true;
+                }
+        );
+
+        files: (
+                {
+                        filename = "README";
+                        path = "/README";
+                        device = "/dev/mmcblk0p1";
+                        filesystem = "vfat";
+                        encrypted = true;
+                }
+        );
+
+        scripts: (
+                {
+                        filename = "erase_at_end";
+                        type = "lua";
+                        encrypted = true;
+                },
+                {
+                        filename = "display_info";
+                        type = "lua";
+                        encrypted = true;
+                }
+        );
+
+        bootenv: (
+                {
+                        name = "vram";
+                        value = "4M";
+                },
+                {
+                        name = "addfb";
+                        value = "setenv bootargs ${bootargs} omapfb.vram=1:2M,2:2M,3:2M omapdss.def_disp=lcd"
+                }
+        );
+}

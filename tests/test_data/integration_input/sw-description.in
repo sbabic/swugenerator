@@ -1,0 +1,85 @@
+software =
+{
+        version = "@@UPDATE_VERSION@@";
+        description = "Firmware update for @@PRODUCT@@";
+
+        hardware-compatibility: [ "1.0", "1.2", "1.3"];
+
+        /* partitions tag is used to resize UBI partitions */
+        partitions: ( /* UBI Volumes */
+                {
+                        name = "rootfs";
+                        device = "mtd4";
+                        size = 104896512; /* in bytes */
+                },
+                {
+                        name = "data";
+                        device = "mtd5";
+                        size = 50448384; /* in bytes */
+                }
+        );
+
+
+        images: (
+                {
+                        filename = "rootfs.ubifs";
+                        volume = "rootfs";
+                },
+                {
+                        filename = "swupdate.ext3.gz.u-boot";
+                        volume = "fs_recovery";
+                },
+                {
+                        filename = "sdcard.ext3.gz";
+                        device = "/dev/mmcblk0p1";
+                        compressed = "zlib";
+                },
+                {
+                        filename = "bootlogo.bmp";
+                        volume = "splash";
+                },
+                {
+                        filename = "uImage.bin";
+                        volume = "kernel";
+                },
+                {
+                        filename = "fpga.txt";
+                        type = "fpga";
+                },
+                {
+                        filename = "bootloader-env";
+                        type = "bootloader";
+                }
+        );
+
+        files: (
+                {
+                        filename = "README";
+                        path = "/README";
+                        device = "/dev/mmcblk0p1";
+                        filesystem = "vfat"
+                }
+        );
+
+        scripts: (
+                {
+                        filename = "erase_at_end";
+                        type = "lua";
+                },
+                {
+                        filename = "display_info";
+                        type = "lua";
+                }
+        );
+
+        bootenv: (
+                {
+                        name = "vram";
+                        value = "4M";
+                },
+                {
+                        name = "addfb";
+                        value = "setenv bootargs ${bootargs} omapfb.vram=1:2M,2:2M,3:2M omapdss.def_disp=lcd"
+                }
+        );
+}
