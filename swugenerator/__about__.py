@@ -20,7 +20,7 @@ __uri__ = "https://github.com/sbabic/swugenerator"
 __version__ = "0.2"
 
 __author__ = "Stefano Babic"
-__email__ = "stefano.babic@babic.homelinux.org"
+__email__ = "stefano.babic@swupdate.org"
 
 __license__ = "GPL version 3"
 __copyright__ = f"Copyright 2022 {__author__}"
