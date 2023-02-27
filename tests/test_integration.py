@@ -67,6 +67,7 @@ def encrypted_sw_description_template(input_directory):
     filename = "enc-sw-description.in"
     return copy_to_test_dir(filename, input_directory)
 
+
 @pytest.fixture()
 def config_file(input_directory):
     """Copies config file to test directory"""
@@ -106,7 +107,9 @@ def validate_swu(output_swu, encrypted=False):
             if output_file.size != reference_file.size:
                 print("Sizes do not match")
                 return False
-            if not encrypted and output.read(output_file.size) != reference.read(output_file.size):
+            if not encrypted and output.read(output_file.size) != reference.read(
+                output_file.size
+            ):
                 print("File contents are not equal")
                 return False
     return True
@@ -153,7 +156,11 @@ def test_command_with_sign_flag_creates_valid_signed_swu(
 
 
 def test_command_with_encryption_flag_creates_encrypted_swu(
-    artifactory, encrypted_sw_description_template, config_file, encryption_key, output_directory
+    artifactory,
+    encrypted_sw_description_template,
+    config_file,
+    encryption_key,
+    output_directory,
 ):
     output_file = "output.swu.enc"
     command_args = [
