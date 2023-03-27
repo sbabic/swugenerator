@@ -83,8 +83,6 @@ class SWUGenerator:
 
             if "compressed" in entry and not self.nocompress:
                 cmp = entry["compressed"]
-                if cmp:
-                    cmp = "zlib"
                 if cmp not in ("zlib", "zstd"):
                     logging.critical("Wrong compression algorithm: %s", cmp)
                     sys.exit(1)
