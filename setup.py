@@ -22,7 +22,6 @@ setup(
     },
     install_requires=[
         "libconf~=2.0.1",
-        "setuptools~=57.0.0",
     ],
     python_requires=">=3.6",
 )
