@@ -122,6 +122,56 @@ class SWUGenerator:
                     sys.exit(1)
 
                 new.fullfilename = new_path
+            # compression cannot be used with delta, because it has own compressor
+            elif entry["type"] and entry["type"] == "delta":
+                cmd = [
+                    "zck",
+                    "-u",
+                    "--chunk-hash-type",
+                    "sha256",
+                   "--output",
+                    new.fullfilename + ".zck",
+                    new.fullfilename,
+                ]
+                try:
+                    subprocess.run(" ".join(cmd), shell=True, check=True, text=True)
+                except subprocess.CalledProcessError:
+                    logging.critical(
+                        "Cannot create ZCK %s with %s", entry["filename"], cmd
+                    )
+                    sys.exit(1)
+
+                # Now extract header
+                cmd = [
+                    "zck_read_header",
+                    "-v",
+                    new.fullfilename + ".zck",
+                ]
+                try:
+                    result =  subprocess.run(" ".join(cmd),
+                                             shell=True,
+                                             check=True,
+                                             capture_output=True,
+                                             text=True)
+                except subprocess.CalledProcessError:
+                    logging.critical(
+                        "Cannot extract ZCK Header %s with %s", entry["filename"], cmd
+                    )
+                    sys.exit(1)
+
+                found_header =  re.search(r"Header size: (\d+)", result.stdout)
+                header_size = int(found_header.group(1))
+                zckheaderfile = os.path.join(self.temp.name, new.newfilename)
+
+                with open(zckheaderfile, "wb") as zck:
+                    with open(new.fullfilename + ".zck", "rb") as tmpzck:
+                        while header_size:
+                            chunk = tmpzck.read(header_size)
+                            if not chunk:
+                                break
+                            zck.write(chunk)
+                            header_size -= len(chunk)
+                new.fullfilename = zckheaderfile
 
             # Encrypt if required
             if "encrypted" in entry and not self.noencrypt:
