@@ -14,6 +14,7 @@ class SWUSign:
         self.cert = None
         self.cmd = None
         self.passin = None
+        self.certfile = None
         self.signcmd = []
 
     def get_passwd_file_args(self):
@@ -24,6 +25,15 @@ class SWUSign:
 
     def set_password_file(self, passin):
         self.passin = passin
+
+    def get_certfile_args(self):
+        certfile_args = []
+        if self.certfile:
+            certfile_args = ["-certfile", self.certfile]
+        return certfile_args
+
+    def set_certfile(self, certfile):
+        self.certfile = certfile
 
     def sign(self):
         try:
@@ -36,12 +46,13 @@ class SWUSign:
 
 
 class SWUSignCMS(SWUSign):
-    def __init__(self, key, cert, passin):
+    def __init__(self, key, cert, passin, certfile):
         super().__init__()
         self.type = "CMS"
         self.key = key
         self.cert = cert
         self.passin = passin
+        self.certfile = certfile
 
     def prepare_cmd(self, sw_desc_in, sw_desc_sig):
         self.signcmd = [
@@ -64,6 +75,7 @@ class SWUSignCMS(SWUSign):
             "-binary",
         ]
         self.signcmd += self.get_passwd_file_args()
+        self.signcmd += self.get_certfile_args()
 
 
 class SWUSignRSA(SWUSign):

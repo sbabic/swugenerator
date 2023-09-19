@@ -86,6 +86,7 @@ def parse_signing_option(
 ) -> Union[SWUSignCMS, SWUSignRSA, SWUSignPKCS11, SWUSignCustom]:
     """Parses signgning option passed by user. Valid options can be found below.
 
+    CMS,<private key>,<certificate used to sign>,<file with password>,<file with certs>
     CMS,<private key>,<certificate used to sign>,<file with password>
     CMS,<private key>,<certificate used to sign>
     RSA,<private key>,<file with password>
@@ -105,15 +106,19 @@ def parse_signing_option(
     sign_parms = sign_arg.split(",")
     cmd = sign_parms[0]
     if cmd == "CMS":
-        if len(sign_parms) not in (3, 4) or not all(sign_parms):
+        if len(sign_parms) not in (3, 4, 5) or not all(sign_parms[0:2]):
             raise InvalidSigningOption(
-                "CMS requires private key, certificate, and an optional password file"
+                "CMS requires private key, certificate, an optional password file and an optional file with additional certificates"
             )
+        # Format : CMS,<private key>,<certificate used to sign>,<file with password>,<file with certs>
+        if len(sign_parms) == 5:
+            return SWUSignCMS(sign_parms[1], sign_parms[2], sign_parms[3], sign_parms[4])
         # Format : CMS,<private key>,<certificate used to sign>,<file with password>
-        if len(sign_parms) == 4:
-            return SWUSignCMS(sign_parms[1], sign_parms[2], sign_parms[3])
+        elif len(sign_parms) == 4:
+            return SWUSignCMS(sign_parms[1], sign_parms[2], sign_parms[3], None)
         # Format : CMS,<private key>,<certificate used to sign>
-        return SWUSignCMS(sign_parms[1], sign_parms[2], None)
+        else:
+            return SWUSignCMS(sign_parms[1], sign_parms[2], None, None)
     if cmd == "RSA":
         if len(sign_parms) not in (2, 3) or not all(sign_parms):
             raise InvalidSigningOption(
@@ -236,7 +241,7 @@ def parse_args(args: List[str]) -> None:
             """\
             RSA key or certificate to sign the SWU
             One of :
-            CMS,<private key>,<certificate used to sign>,<file with password if any>
+            CMS,<private key>,<certificate used to sign>,<file with password if any>,<file with certs if any>
             RSA,<private key>,<file with password if any>
             PKCS11,<pin>
             CUSTOM,<custom command> """
