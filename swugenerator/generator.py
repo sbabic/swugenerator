@@ -123,7 +123,7 @@ class SWUGenerator:
 
                 new.fullfilename = new_path
             # compression cannot be used with delta, because it has own compressor
-            elif entry["type"] and entry["type"] == "delta":
+            elif ("type" in entry) and entry["type"] == "delta":
                 cmd = [
                     "zck",
                     "-u",
