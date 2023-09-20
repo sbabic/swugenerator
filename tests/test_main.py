@@ -88,8 +88,10 @@ def test_missing_config_file_throws_exception():
 
 #### Signing option parsing tests ####
 SIGNING_TEST_PARAMETERS = [
-    ("CMS,foo,bar,baz", SWUSignCMS("foo", "bar", "baz")),
-    ("CMS,foo,bar", SWUSignCMS("foo", "bar", None)),
+    ("CMS,foo,bar,baz,qux", SWUSignCMS("foo", "bar", "baz", "qux")),
+    ("CMS,foo,bar,,qux", SWUSignCMS("foo", "bar", "", "qux")),
+    ("CMS,foo,bar,baz", SWUSignCMS("foo", "bar", "baz", None)),
+    ("CMS,foo,bar", SWUSignCMS("foo", "bar", None, None)),
     ("RSA,foo,bar", SWUSignRSA("foo", "bar")),
     ("RSA,foo", SWUSignRSA("foo", None)),
     ("PKCS11,foo", SWUSignPKCS11("foo")),
@@ -108,19 +110,20 @@ def test_valid_siging_params_parsed_to_correct_signing_obj(arg, expected):
 
 
 INVALID_SIGNING_TEST_PARAMETERS = [
-    ("CMS", "CMS requires private key, certificate, and an optional password file"),
-    ("CMS,", "CMS requires private key, certificate, and an optional password file"),
-    ("CMS,,", "CMS requires private key, certificate, and an optional password file"),
-    ("CMS,,,", "CMS requires private key, certificate, and an optional password file"),
-    ("CMS,,,,", "CMS requires private key, certificate, and an optional password file"),
+    ("CMS", "CMS requires private key, certificate, an optional password file and an optional file with additional certificates"),
+    ("CMS,", "CMS requires private key, certificate, an optional password file and an optional file with additional certificates"),
+    ("CMS,,", "CMS requires private key, certificate, an optional password file and an optional file with additional certificates"),
+    ("CMS,,,", "CMS requires private key, certificate, an optional password file and an optional file with additional certificates"),
+    ("CMS,,,,", "CMS requires private key, certificate, an optional password file and an optional file with additional certificates"),
+    ("CMS,,,,,", "CMS requires private key, certificate, an optional password file and an optional file with additional certificates"),
     (
         "CMS,,foo,",
-        "CMS requires private key, certificate, and an optional password file",
+        "CMS requires private key, certificate, an optional password file and an optional file with additional certificates",
     ),
-    ("CMS,foo", "CMS requires private key, certificate, and an optional password file"),
+    ("CMS,foo", "CMS requires private key, certificate, an optional password file and an optional file with additional certificates"),
     (
-        "CMS,foo,bar,baz,jaz",
-        "CMS requires private key, certificate, and an optional password file",
+        "CMS,foo,bar,baz,qux,jaz",
+        "CMS requires private key, certificate, an optional password file and an optional file with additional certificates",
     ),
     ("RSA,foo,bar,baz", "RSA requires private key and an optional password file"),
     ("PKCS11", "PKCS11 requires URI"),
@@ -153,7 +156,7 @@ def mock_main_funcs(monkeypatch):
         return "foo", "bar"
 
     def mock_parse_signing_option(*_):
-        return SWUSignCMS("foo", "bar", "baz")
+        return SWUSignCMS("foo", "bar", "baz", "qux")
 
     def mock_parse_config_file(*_):
         return {}
