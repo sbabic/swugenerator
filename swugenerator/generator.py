@@ -84,10 +84,11 @@ class SWUGenerator:
             if "compressed" in entry and not self.nocompress:
                 cmp = entry["compressed"]
                 if cmp not in ("zlib", "zstd"):
-                    logging.critical("Wrong compression algorithm: %s", cmp)
+                    logging.critical("Wrong compression algorithm: \"%s\". Supported only \"zlib\" or \"zstd\".", cmp)
                     sys.exit(1)
 
                 new_path = os.path.join(self.temp.name, new.newfilename) + "." + cmp
+                os.makedirs(os.path.dirname(new_path), exist_ok=True)
                 new.newfilename = new.newfilename + "." + cmp
                 if cmp == "zlib":
                     cmd = [
@@ -107,6 +108,7 @@ class SWUGenerator:
                         "-z",
                         "-k",
                         "-T0",
+                        "-f",
                         "-c",
                         new.fullfilename,
                         ">",
