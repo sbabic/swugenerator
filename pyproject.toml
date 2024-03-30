@@ -1,0 +1,27 @@
+[project]
+name = "swugenerator"
+description = "Generator of Update Packages (SWU) for SWUpdate OTA Agent"
+version = "0.3"
+authors = [
+    { name = "Stefano Babic", email = "stefano.babic@swupdate.org" }
+]
+readme = "README.rst"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+license = {file = "LICENSE"}
+
+dynamic = ["scripts"]
+dependencies = [
+   "libconf~=2.0.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/sbabic/swugenerator"
+
+[build-system]
+requires = ["setuptools>=45.0"]
+build-backend = "setuptools.build_meta"
