@@ -88,6 +88,7 @@ class SWUGenerator:
                     sys.exit(1)
 
                 new_path = os.path.join(self.temp.name, new.newfilename) + "." + cmp
+                os.makedirs(os.path.dirname(new_path), exist_ok=True)
                 new.newfilename = new.newfilename + "." + cmp
                 if cmp == "zlib":
                     cmd = [
