@@ -122,6 +122,9 @@ class SWUGenerator:
                     sys.exit(1)
 
                 new.fullfilename = new_path
+
+                entry.setdefault("properties", {}) \
+                     .update({ "decompressed-size": str(new.getsize()) })
             # compression cannot be used with delta, because it has own compressor
             elif ("type" in entry) and entry["type"] == "delta":
                 cmd = [
