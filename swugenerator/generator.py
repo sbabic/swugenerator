@@ -73,7 +73,7 @@ class SWUGenerator:
                 new = image
                 break
         if not new:
-            logging.debug("New artifact  %s", entry["filename"])
+            logging.debug("New artifact %s", entry["filename"])
             new = Artifact(entry["filename"])
             if not new.findfile(self.artifactory):
                 logging.critical("Artifact %s not found", entry["filename"])
@@ -195,7 +195,7 @@ class SWUGenerator:
 
             self.artifacts.append(new)
         else:
-            logging.debug("Artifact  %s already stored", entry["filename"])
+            logging.debug("Artifact %s already stored", entry["filename"])
 
         entry["filename"] = new.newfilename
         entry["sha256"] = new.getsha256()
