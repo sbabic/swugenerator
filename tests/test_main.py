@@ -27,6 +27,12 @@ def valid_key_file(test_dir):
         key_file_fd.write(f"key={VALID_KEY}\niv={VALID_IV}")
     return key_file
 
+@pytest.fixture(scope="session")
+def valid_key_file_2(test_dir):
+    key_file = test_dir / VALID_KEY_FILE
+    with key_file.open("w") as key_file_fd:
+        key_file_fd.write(f"key={VALID_KEY}\niv ={VALID_IV}")
+    return key_file
 
 @pytest.fixture(scope="session")
 def invalid_key_file(test_dir):
@@ -40,6 +46,8 @@ def invalid_key_file(test_dir):
 def test_extract_keys_returns_valid_tuple_from_valid_file(valid_key_file):
     assert main.extract_keys(str(valid_key_file)) == (VALID_KEY, VALID_IV)
 
+def test_extract_keys_returns_valid_tuple_from_valid_file_2(valid_key_file_2):
+    assert main.extract_keys(str(valid_key_file_2)) == (VALID_KEY, VALID_IV)
 
 def test_extract_keys_returns_none_from_key_file_thats_invalid(invalid_key_file):
     assert main.extract_keys(str(invalid_key_file)) == (VALID_KEY, None)

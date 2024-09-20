@@ -52,7 +52,7 @@ def extract_keys(keyfile: str) -> Tuple[Optional[str], Optional[str]]:
     enc_key, init_vec = None, None
     for line in lines:
         key, value = (
-            line.rstrip("\n").split("=") if len(line.split("=")) == 2 else (None, None)
+            line.replace(" ", "").rstrip("\n").split("=") if len(line.split("=")) == 2 else (None, None)
         )
         if key == "key":
             enc_key = value

@@ -181,6 +181,11 @@ class SWUGenerator:
                         entry["filename"],
                     )
                 if self.noivt:
+                    if not self.aesiv:
+                        logging.critical(
+                            "%s must be encrypted, but no initialization vector is given",
+                            entry["filename"],
+                        )
                     iv = self.aesiv
                 else:
                     iv = self.generate_iv()
@@ -263,6 +268,10 @@ class SWUGenerator:
             if not self.aeskey:
                 logging.critical(
                     "sw-description must be encrypted, but no encryption key is given"
+                )
+            if not self.aesiv:
+                logging.critical(
+                    "sw-description must be encrypted, but no initialization vector is given"
                 )
 
             iv = self.aesiv
