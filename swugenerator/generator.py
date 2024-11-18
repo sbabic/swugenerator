@@ -31,6 +31,7 @@ class SWUGenerator:
         no_compress=False,
         no_encrypt=False,
         no_ivt=False,
+        no_hash=False
     ):
         self.swdescription = template
         self.artifacts = []
@@ -49,6 +50,7 @@ class SWUGenerator:
         self.nocompress = no_compress
         self.noencrypt = no_encrypt
         self.noivt = no_ivt
+        self.nohash = no_hash
 
     @staticmethod
     def generate_iv():
@@ -203,7 +205,8 @@ class SWUGenerator:
             logging.debug("Artifact %s already stored", entry["filename"])
 
         entry["filename"] = new.newfilename
-        entry["sha256"] = new.getsha256()
+        if not self.nohash:
+            entry["sha256"] = new.getsha256()
         if "encrypted" in entry:
             entry["ivt"] = new.ivt
 

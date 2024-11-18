@@ -186,6 +186,7 @@ def create_swu(args: argparse.Namespace) -> None:
         args.no_compress,
         args.no_encrypt,
         args.no_ivt,
+        args.no_hash,
     )
     swu.process()
     swu.close()
@@ -231,6 +232,13 @@ def parse_args(args: List[str]) -> None:
         "--no-ivt",
         action="store_true",
         help="Do not generate IV when encrypting",
+    )
+
+    parser.add_argument(
+        "-y",
+        "--no-hash",
+        action="store_true",
+        help="Do not store sha256 hash in sw-description",
     )
 
     parser.add_argument(
