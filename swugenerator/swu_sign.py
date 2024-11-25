@@ -97,10 +97,12 @@ class SWUSignCustom(SWUSign):
     def __init__(self, cmd):
         super().__init__()
         self.type = "CUSTOM"
-        self.custom = cmd.split()
+        self.custom = cmd
 
-    def prepare_cmd(self, *_):
-        self.signcmd = copy.deepcopy(self.custom)
+    def prepare_cmd(self, sw_desc_in, sw_desc_sign):
+        self.signcmd = self.custom
+        self.signcmd.append(sw_desc_in)
+        self.signcmd.append(sw_desc_sign)
 
 
 # Note: tested with Nitrokey HSM

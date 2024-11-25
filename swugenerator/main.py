@@ -136,9 +136,9 @@ def parse_signing_option(
         return SWUSignPKCS11(sign_parms[1])
     if cmd == "CUSTOM":
         # Format : CUSTOM,<custom command>
-        if len(sign_parms) != 2 or not all(sign_parms):
+        if len(sign_parms) < 2 or not all(sign_parms):
             raise InvalidSigningOption("CUSTOM requires custom command")
-        return SWUSignCustom(sign_parms[1])
+        return SWUSignCustom(sign_parms[1:])
     raise InvalidSigningOption("Unknown signing command")
 
 
