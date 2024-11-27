@@ -109,6 +109,7 @@ class SWUGenerator:
                         "-z",
                         "-k",
                         "-T0",
+                        "-f",
                         "-c",
                         new.fullfilename,
                         ">",
