@@ -55,7 +55,10 @@ The tool signs the SWU and can encrypt the artifacts. The tool parses the libcon
 Installation
 ============
 
-To install ``swugenerator`` clone the repository, and from the main project folder run pip (pip3 required): ::
+To install ``swugenerator`` clone the repository, and from the main project folder run pip (pip3 required):
+For new Linux distributions, replace it with `pipx`.
+
+::
 
     pip install .
 
