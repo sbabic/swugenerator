@@ -300,7 +300,7 @@ def parse_args(args: List[str]) -> None:
     parser.add_argument(
         "-l",
         "--loglevel",
-        choices=["DEBUG", "INFO", "ERROR", "CRITICAL"],
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="WARNING",
         type=set_log_level,
         help="set log level, default is WARNING",
