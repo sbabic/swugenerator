@@ -79,16 +79,21 @@ class SWUSignCMS(SWUSign):
 
 
 class SWUSignRSA(SWUSign):
-    def __init__(self, key, passin):
+    def __init__(self, key, passin, pss=False):
         super().__init__()
         self.type = "RSA"
         self.key = key
         self.passin = passin
+        if pss == True:
+            self.pss_args = ["-sigopt rsa_padding_mode:pss", "-sigopt rsa_pss_saltlen:-2"]
+        else:
+            self.pss_args = []
 
     def prepare_cmd(self, sw_desc_in, sw_desc_sig):
         self.signcmd = (
             ["openssl", "dgst", "-sha256", "-sign", self.key]
             + self.get_passwd_file_args()
+            + self.pss_args
             + ["-out", sw_desc_sig, sw_desc_in]
         )
 
