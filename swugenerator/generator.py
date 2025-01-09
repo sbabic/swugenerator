@@ -177,7 +177,7 @@ class SWUGenerator:
                 new.fullfilename = zckheaderfile
 
             # Encrypt if required
-            if "encrypted" in entry and not self.noencrypt:
+            if "encrypted" in entry and entry["encrypted"] is True and not self.noencrypt:
                 if not self.aeskey:
                     logging.critical(
                         "%s must be encrypted, but no encryption key is given",
@@ -208,7 +208,7 @@ class SWUGenerator:
         entry["filename"] = new.newfilename
         if not self.nohash:
             entry["sha256"] = new.getsha256()
-        if "encrypted" in entry:
+        if "encrypted" in entry and entry["encrypted"] is True:
             entry["ivt"] = new.ivt
 
     def find_files_in_swdesc(self, first):
