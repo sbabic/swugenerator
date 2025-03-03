@@ -8,20 +8,24 @@ A host tool to generate SWU update package for SWUpdate.
 SYNOPSIS
 ========
 
-usage: SWUGenerator [-h] [-K ENCRYPTION_KEY_FILE] [-k SIGN] -s SW_DESCRIPTION
-                    [-a ARTIFACTORY] -o SWU_FILE [-c CONFIG]
+usage: SWUGenerator [-h] [-K ENCRYPTION_KEY_FILE] [-n] [-e] [-x] [-y] [-k SIGN]
+                    -s SW_DESCRIPTION [-t] [-a ARTIFACTORY] -o SWU_FILE
+                    [-c CONFIG] [-l LEVEL]
                     command
 
 Generator SWU Packages for SWUpdate
 
 positional arguments:
-  command               command to be executed, one of : create
+  command               command to be executed, one of: create
 
 optional arguments:
   -h, --help            show this help message and exit
   -K ENCRYPTION_KEY_FILE, --encryption-key-file ENCRYPTION_KEY_FILE
                         AES Key to encrypt artifacts
   -n, --no-compress     Do not compress files
+  -e, --no-encrypt      Do not encrypt files
+  -x, --no-ivt          Do not generate IV when encrypting
+  -y, --no-hash         Do not store sha256 hash in sw-description
   -k SIGN, --sign SIGN  RSA key or certificate to sign the SWU
   -s SW_DESCRIPTION, --sw-description SW_DESCRIPTION
                         sw-description template
@@ -32,6 +36,9 @@ optional arguments:
                         SWU output file
   -c CONFIG, --config CONFIG
                         configuration file
+  -l LEVEL, --loglevel LEVEL
+                        set log level, default is WARNING, one of: DEBUG, INFO,
+                        ERROR, CRITICAL
 
 
 Description
