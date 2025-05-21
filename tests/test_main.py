@@ -103,6 +103,7 @@ SIGNING_TEST_PARAMETERS = [
     ("RSA,foo,bar", SWUSignRSA("foo", "bar")),
     ("RSA,foo", SWUSignRSA("foo", None)),
     ("PKCS11,foo", SWUSignPKCS11("foo")),
+    ("PKCS11,foo,bar", SWUSignPKCS11("foo", "bar")),
     ("CUSTOM,foo", SWUSignCustom("foo")),
 ]
 

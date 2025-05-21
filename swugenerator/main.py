@@ -91,7 +91,7 @@ def parse_signing_option(
     CMS,<private key>,<certificate used to sign>
     RSA,<private key>,<file with password>
     RSA,<private key>
-    PKCS11,<pin>
+    PKCS11,<pin>[,<module>]
     CUSTOM,<custom command>
 
     Args:
@@ -130,10 +130,12 @@ def parse_signing_option(
         # Format : RSA,<private key>
         return SWUSignRSA(sign_parms[1], None)
     if cmd == "PKCS11":
-        # Format : PKCS11,<pin>
-        if len(sign_parms) != 2 or not all(sign_parms):
-            raise InvalidSigningOption("PKCS11 requires URI")
-        return SWUSignPKCS11(sign_parms[1])
+        # Format : PKCS11,<pin>[,<module>]
+        if len(sign_parms) not in (2, 3) or not all(sign_parms[0:2]):
+            raise InvalidSigningOption("PKCS11 requires pin and optional module path")
+        pin = sign_parms[1]
+        module = sign_parms[2] if len(sign_parms) == 3 else None
+        return SWUSignPKCS11(pin, module)
     if cmd == "CUSTOM":
         # Format : CUSTOM,<custom command>
         if len(sign_parms) < 2 or not all(sign_parms):
@@ -251,7 +253,7 @@ def parse_args(args: List[str]) -> None:
             One of :
             CMS,<private key>,<certificate used to sign>,<file with password if any>,<file with certs if any>
             RSA,<private key>,<file with password if any>
-            PKCS11,<pin>
+            PKCS11,<pin>[,<module>]
             CUSTOM,<custom command> """
         ),
     )
