@@ -119,16 +119,16 @@ def parse_signing_option(
         # Format : CMS,<private key>,<certificate used to sign>
         else:
             return SWUSignCMS(sign_parms[1], sign_parms[2], None, None)
-    if cmd == "RSA":
+    if cmd[:3] == "RSA":
         if len(sign_parms) not in (2, 3) or not all(sign_parms):
             raise InvalidSigningOption(
                 "RSA requires private key and an optional password file"
             )
-        # Format : RSA,<private key>,<file with password>
+        # Format : RSA(PSS),<private key>,<file with password>
         if len(sign_parms) == 3:
-            return SWUSignRSA(sign_parms[1], sign_parms[2])
-        # Format : RSA,<private key>
-        return SWUSignRSA(sign_parms[1], None)
+            return SWUSignRSA(sign_parms[1], sign_parms[2], pss=True if cmd == "RSAPSS" else False)
+        # Format : RSA(PSS),<private key>
+        return SWUSignRSA(sign_parms[1], None, pss=True if cmd == "RSAPSS" else False)
     if cmd == "PKCS11":
         # Format : PKCS11,<pin>[,<module>]
         if len(sign_parms) not in (2, 3) or not all(sign_parms[0:2]):
