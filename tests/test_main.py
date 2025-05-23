@@ -155,6 +155,46 @@ def test_invalid_signing_params_throws_exception_with_correct_msg(arg, exception
     assert exception_msg in error.value.args
 
 
+def test_parse_signing_option_cms_with_engine_and_keyform():
+    # Only engine
+    obj = main.parse_signing_option("CMS,foo,bar,baz,qux", engine="myengine")
+    assert isinstance(obj, SWUSignCMS)
+    assert obj.engine == "myengine"
+    assert obj.key == "foo"
+    assert obj.cert == "bar"
+    assert obj.passin == "baz"
+    assert obj.certfile == "qux"
+
+    # Only keyform
+    obj = main.parse_signing_option("CMS,foo,bar,baz,qux", keyform="mykeyform")
+    assert isinstance(obj, SWUSignCMS)
+    assert obj.keyform == "mykeyform"
+    assert obj.key == "foo"
+    assert obj.cert == "bar"
+    assert obj.passin == "baz"
+    assert obj.certfile == "qux"
+
+    # Both engine and keyform
+    obj = main.parse_signing_option("CMS,foo,bar,baz,qux", engine="myengine", keyform="mykeyform")
+    assert isinstance(obj, SWUSignCMS)
+    assert obj.engine == "myengine"
+    assert obj.keyform == "mykeyform"
+    assert obj.key == "foo"
+    assert obj.cert == "bar"
+    assert obj.passin == "baz"
+    assert obj.certfile == "qux"
+
+    # Neither engine nor keyform
+    obj = main.parse_signing_option("CMS,foo,bar,baz,qux")
+    assert isinstance(obj, SWUSignCMS)
+    assert obj.engine is None
+    assert obj.keyform is None
+    assert obj.key == "foo"
+    assert obj.cert == "bar"
+    assert obj.passin == "baz"
+    assert obj.certfile == "qux"
+
+
 #### Parse args tests ####
 @pytest.fixture
 def mock_main_funcs(monkeypatch):
