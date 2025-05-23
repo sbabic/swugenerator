@@ -46,13 +46,14 @@ class SWUSign:
 
 
 class SWUSignCMS(SWUSign):
-    def __init__(self, key, cert, passin, certfile):
+    def __init__(self, key, cert, passin, certfile, engine=None):
         super().__init__()
         self.type = "CMS"
         self.key = key
         self.cert = cert
         self.passin = passin
         self.certfile = certfile
+        self.engine = engine
 
     def prepare_cmd(self, sw_desc_in, sw_desc_sig):
         self.signcmd = [
@@ -66,6 +67,8 @@ class SWUSignCMS(SWUSign):
             "-signer",
             self.cert,
         ]
+        if self.engine:
+            self.signcmd += ["-engine", self.engine]
         self.signcmd += [
             "-inkey",
             self.key,

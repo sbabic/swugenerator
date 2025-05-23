@@ -83,6 +83,7 @@ def parse_config_file(config_file_arg: str) -> dict:
 
 def parse_signing_option(
     sign_arg: str,
+    engine: str = None,
 ) -> Union[SWUSignCMS, SWUSignRSA, SWUSignPKCS11, SWUSignCustom]:
     """Parses signgning option passed by user. Valid options can be found below.
 
@@ -96,6 +97,7 @@ def parse_signing_option(
 
     Args:
         sign_arg (str): argument passed by user
+        engine (str): OpenSSL engine to use for signing (e.g., pkcs11)
 
     Raises:
         InvalidSigningOption: If option passed by user is invalid
@@ -112,13 +114,13 @@ def parse_signing_option(
             )
         # Format : CMS,<private key>,<certificate used to sign>,<file with password>,<file with certs>
         if len(sign_parms) == 5:
-            return SWUSignCMS(sign_parms[1], sign_parms[2], sign_parms[3], sign_parms[4])
+            return SWUSignCMS(sign_parms[1], sign_parms[2], sign_parms[3], sign_parms[4], engine)
         # Format : CMS,<private key>,<certificate used to sign>,<file with password>
         elif len(sign_parms) == 4:
-            return SWUSignCMS(sign_parms[1], sign_parms[2], sign_parms[3], None)
+            return SWUSignCMS(sign_parms[1], sign_parms[2], sign_parms[3], None, engine)
         # Format : CMS,<private key>,<certificate used to sign>
         else:
-            return SWUSignCMS(sign_parms[1], sign_parms[2], None, None)
+            return SWUSignCMS(sign_parms[1], sign_parms[2], None, None, engine)
     if cmd == "RSA":
         if len(sign_parms) not in (2, 3) or not all(sign_parms):
             raise InvalidSigningOption(
@@ -173,6 +175,10 @@ def create_swu(args: argparse.Namespace) -> None:
 
     # Add current working directory to search path
     args.artifactory.append(Path(os.getcwd()))
+
+    # Pass engine to parse_signing_option if sign is set
+    if hasattr(args, 'sign') and args.sign and isinstance(args.sign, str):
+        args.sign = parse_signing_option(args.sign, args.engine)
 
     swu = generator.SWUGenerator(
         args.sw_description,
@@ -244,12 +250,12 @@ def parse_args(args: List[str]) -> None:
     parser.add_argument(
         "-k",
         "--sign",
-        type=parse_signing_option,
         help=textwrap.dedent(
             """\
             RSA key or certificate to sign the SWU
             One of :
             CMS,<private key>,<certificate used to sign>,<file with password if any>,<file with certs if any>
+                 -g, --engine ENGINE       OpenSSL engine to use for signing (e.g., pkcs11)
             RSA,<private key>,<file with password if any>
             PKCS11,<pin>
             CUSTOM,<custom command> """
@@ -306,6 +312,13 @@ def parse_args(args: List[str]) -> None:
         help="set log level, default is WARNING",
     )
 
+    parser.add_argument(
+        "-g",
+        "--engine",
+        default=None,
+        help=argparse.SUPPRESS,
+    )
+
     subparsers = parser.add_subparsers(
         title="command", help="command to be executed", required=True
     )
@@ -313,6 +326,8 @@ def parse_args(args: List[str]) -> None:
     create_subparser.set_defaults(func=create_swu)
 
     args = parser.parse_args(args)
+    if hasattr(args, 'sign') and args.sign:
+        args.sign = parse_signing_option(args.sign, args.engine)
     args.func(args)
 
 
