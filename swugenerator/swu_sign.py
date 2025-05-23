@@ -37,7 +37,7 @@ class SWUSign:
 
     def sign(self):
         try:
-            subprocess.run(" ".join(self.signcmd), shell=True, check=True, text=True)
+            subprocess.run(self.signcmd, check=True, text=True)
         except subprocess.CalledProcessError:
             logging.critical(
                 "SWU cannot be signed, signing command was %s", self.signcmd
