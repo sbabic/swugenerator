@@ -27,6 +27,15 @@ class InvalidSigningOption(ValueError):
     """Raised when an invalid signing option is passed via command line"""
 
 
+class UpdateAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        cfg = getattr(namespace, self.dest, None)
+        if cfg is None:
+            cfg = {}
+        cfg.update(*values)
+        setattr(namespace, self.dest, cfg)
+
+
 def extract_keys(keyfile: str) -> Tuple[Optional[str], Optional[str]]:
     """Extracts encryption key and initialization vector (IV)
 
@@ -300,10 +309,13 @@ def parse_args(args: List[str]) -> None:
         help="SWU output file",
     )
 
+    parser.register("action", "update", UpdateAction)
     parser.add_argument(
         "-c",
         "--config",
         default={},
+        action="update",
+        nargs="*",
         type=parse_config_file,
         help="configuration file",
     )
