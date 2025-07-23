@@ -17,7 +17,7 @@ __title__ = "SWUGenerator"
 __summary__ = "SWU Package Generator for SWUpdate"
 __uri__ = "https://github.com/sbabic/swugenerator"
 
-__version__ = "0.4"
+__version__ = "0.5"
 
 __author__ = "Stefano Babic"
 __email__ = "stefano.babic@swupdate.org"

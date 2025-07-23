@@ -1,7 +1,7 @@
 [project]
 name = "swugenerator"
 description = "Generator of Update Packages (SWU) for SWUpdate OTA Agent"
-version = "0.4"
+version = "0.5"
 authors = [
     { name = "Stefano Babic", email = "stefano.babic@swupdate.org" }
 ]
