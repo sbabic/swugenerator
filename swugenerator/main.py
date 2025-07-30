@@ -102,7 +102,7 @@ def parse_signing_option(
     CMS,<private key>,<certificate used to sign>
     RSA,<private key>,<file with password>
     RSA,<private key>
-    PKCS11,<pin>[,<module>]
+    PKCS11,<pin>[,<module>,<slot>,<id>]
     CUSTOM,<custom command>
 
     Args:
@@ -143,12 +143,15 @@ def parse_signing_option(
         # Format : RSA,<private key>
         return SWUSignRSA(sign_parms[1], None)
     if cmd == "PKCS11":
-        # Format : PKCS11,<pin>[,<module>]
-        if len(sign_parms) not in (2, 3) or not all(sign_parms[0:2]):
-            raise InvalidSigningOption("PKCS11 requires pin and optional module path")
+        # Format : PKCS11,<pin>[,<module>,<slot>,<id>]
+        if len(sign_parms) not in range(2, 6) or not all(sign_parms[0:2]):
+            raise InvalidSigningOption("PKCS11 requires pin and optional parameters such as module path, slot or id")
         pin = sign_parms[1]
-        module = sign_parms[2] if len(sign_parms) == 3 else None
-        return SWUSignPKCS11(pin, module)
+        module = sign_parms[2] if len(sign_parms) > 2 else None
+        slot   = sign_parms[3] if len(sign_parms) > 3 else None
+        obj_id = sign_parms[4] if len(sign_parms) > 4 else None
+
+        return SWUSignPKCS11(pin, module, slot, obj_id)
     if cmd == "CUSTOM":
         # Format : CUSTOM,<custom command>
         if len(sign_parms) < 2 or not all(sign_parms):
@@ -271,7 +274,7 @@ def parse_args(args: List[str]) -> None:
                  -g, --engine ENGINE       OpenSSL engine to use for signing (e.g., pkcs11)
                  -f, --keyform KEYFORM     Key format to use for signing (e.g., engine)
             RSA,<private key>,<file with password if any>
-            PKCS11,<pin>[,<module>]
+            PKCS11,<pin>[,<module>,<slot>,<id>]
             CUSTOM,<custom command> """
         ),
     )

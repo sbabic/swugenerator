@@ -113,12 +113,16 @@ class SWUSignCustom(SWUSign):
 
 # Note: tested with Nitrokey HSM
 class SWUSignPKCS11(SWUSign):
-    def __init__(self, pin, module=None):
+    def __init__(self, pin, module=None, slot=None, obj_id=None):
         super().__init__()
         self.type = "PKCS11"
         self.custom = []
         if module:
             self.custom.extend(["--module", module])
+        if slot:
+            self.custom.extend(["--slot", slot])
+        if obj_id:
+            self.custom.extend(["--id", obj_id])
         self.custom.extend(["--pin", pin])
 
     def prepare_cmd(self, sw_desc_in, sw_desc_sig):
