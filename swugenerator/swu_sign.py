@@ -125,7 +125,7 @@ class SWUSignPKCS11(SWUSign):
         self.signcmd = [
             "pkcs11-tool",
             "-s",
-            "-m ",
+            "-m",
             "SHA256-RSA-PKCS",
             "-i",
             sw_desc_in,
