@@ -201,6 +201,9 @@ class SWUGenerator:
                 entry["ivt"] = iv
                 new.ivt = iv
 
+                entry.setdefault("properties", {}) \
+                    .update({ "decrypted-size": str(new.getsize()) })
+
             self.artifacts.append(new)
         else:
             logging.debug("Artifact %s already stored", entry["filename"])
