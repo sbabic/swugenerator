@@ -63,7 +63,7 @@ class SWUGenerator:
 
     def close(self):
         self.temp.cleanup()
-        self.cpiofile.close()
+        self.cpiofile.add_trailer()
         self.out.close()
 
     def process_entry(self, entry):

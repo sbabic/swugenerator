@@ -15,7 +15,8 @@ from typing import List, Optional, Tuple, Union
 
 import libconf
 
-from swugenerator import __about__, generator
+from swugenerator import __about__, generator, signer
+
 from swugenerator.swu_sign import SWUSignCMS, SWUSignCustom, SWUSignPKCS11, SWUSignRSA
 
 
@@ -204,6 +205,14 @@ def create_swu(args: argparse.Namespace) -> None:
     swu.process()
     swu.close()
 
+def sign_swu(args: argparse.Namespace) -> None:
+    swu = signer.SWUSigner(
+        args.swu_in_file,
+        args.swu_file,
+        args.sign
+    )
+    swu.process()
+    swu.close()
 
 def parse_args(args: List[str]) -> None:
     """Sets up arguments for swugenerator and parses commandline args
@@ -273,9 +282,9 @@ def parse_args(args: List[str]) -> None:
     parser.add_argument(
         "-s",
         "--sw-description",
-        required=True,
+        required=False,
         type=lambda p: Path(p).resolve(),
-        help="sw-description template",
+        help="sw-description template, required for the create command",
     )
 
     parser.add_argument(
@@ -338,10 +347,23 @@ def parse_args(args: List[str]) -> None:
     )
     create_subparser = subparsers.add_parser("create", help="creates a SWU file")
     create_subparser.set_defaults(func=create_swu)
-
+    sign_subparser = subparsers.add_parser("sign", help="signs an existing SWU file provided by -i")
+    sign_subparser.set_defaults(func=sign_swu)
+    sign_subparser.add_argument(
+        "-i",
+        "--swu-in-file",
+        required=True,
+        type=Path,
+        help="SWU input file to be signed, required for the sign command",
+    )
     args = parser.parse_args(args)
     if hasattr(args, 'sign') and args.sign:
         args.sign = parse_signing_option(args.sign, args.engine, args.keyform)
+    if args.func == create_swu and not args.sw_description:
+        parser.error(
+            "the following arguments are required: -s/--sw-description"
+        )
+
     args.func(args)
 
 
