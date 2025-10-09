@@ -206,3 +206,74 @@ def test_command_with_sign_flag_and_encrypt_flag_creates_signed_encrypted_swu(
     ]
     main.parse_args(command_args)
     assert validate_swu(output_directory / output_file, encrypted=True)
+
+def test_creates_and_signs_valid_swu(
+    artifactory, sw_description_template, config_file,
+    signing_key, output_directory
+):
+    output_file = "output.swu"
+    command_args = [
+        "-s",
+        str(sw_description_template),
+        "-a",
+        str(artifactory),
+        "-c",
+        str(config_file),
+        "-o",
+        str((output_directory / output_file).resolve()),
+        "create",
+    ]
+    main.parse_args(command_args)
+    signed_output_file = "signed_output.swu"
+    command_args = [
+        "-o",
+        str((output_directory / signed_output_file).resolve()),
+        "-k",
+        f"RSA,{signing_key}",
+        "sign",
+        "-i",
+        str((output_directory / output_file).resolve()),
+    ]
+    main.parse_args(command_args)
+
+    assert validate_swu(output_directory / signed_output_file)
+
+
+def test_with_encryption_flag_creates_encrypted_and_sign_swu(
+    artifactory,
+    encrypted_sw_description_template,
+    config_file,
+    encryption_key,
+    signing_key,
+    output_directory,
+):
+    output_file = "output.swu.enc"
+    command_args = [
+        "-s",
+        str(encrypted_sw_description_template),
+        "-a",
+        str(artifactory),
+        "-c",
+        str(config_file),
+        "-K",
+        str(encryption_key),
+        "-o",
+        str((output_directory / output_file).resolve()),
+        "create",
+    ]
+    main.parse_args(command_args)
+    assert validate_swu(output_directory / output_file, encrypted=True)
+
+    signed_output_file = "signed_output.swu.enc"
+    command_args = [
+        "-o",
+        str((output_directory / signed_output_file).resolve()),
+        "-k",
+        f"RSA,{signing_key}",
+        "sign",
+        "-i",
+        str((output_directory / output_file).resolve()),
+    ]
+    main.parse_args(command_args)
+
+    assert validate_swu(output_directory / signed_output_file, encrypted=True)
