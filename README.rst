@@ -8,28 +8,36 @@ A host tool to generate SWU update package for SWUpdate.
 SYNOPSIS
 ========
 
-usage: SWUGenerator [-h] [-K ENCRYPTION_KEY_FILE] [-k SIGN] -s SW_DESCRIPTION
+usage: SWUGenerator [-h] [-K ENCRYPTION_KEY_FILE] [-k SIGN] [-s SW_DESCRIPTION]
                     [-a ARTIFACTORY] -o SWU_FILE [-c CONFIG]
                     command
 
 Generator SWU Packages for SWUpdate
 
 positional arguments:
-  command               command to be executed, one of : create
+  command:
+    {create,sign}         command to be executed
+      create              creates a SWU file
+      sign                signs an existing SWU file provided by -i
 
 optional arguments:
   -h, --help            show this help message and exit
   -K ENCRYPTION_KEY_FILE, --encryption-key-file ENCRYPTION_KEY_FILE
                         AES Key to encrypt artifacts
   -n, --no-compress     Do not compress files
+  -e, --no-encrypt      Do not encrypt files
+  -x, --no-ivt          Do not generate IV when encrypting
+  -y, --no-hash         Do not store sha256 hash in sw-description
   -k SIGN, --sign SIGN  RSA key or certificate to sign the SWU
   -s SW_DESCRIPTION, --sw-description SW_DESCRIPTION
-                        sw-description template
+                        sw-description template for the create command
   -t, --encrypt-swdesc  Encrypt sw-description
   -a ARTIFACTORY, --artifactory ARTIFACTORY
                         list of directories where artifacts are searched
   -o SWU_FILE, --swu-file SWU_FILE
                         SWU output file
+  -i, --swu-in-file SWU_IN_FILE
+                        SWU input file to be signed for the sign command
   -c CONFIG, --config CONFIG
                         configuration file
 
@@ -51,6 +59,12 @@ The tool signs the SWU and can encrypt the artifacts. The tool parses the libcon
         - check if an artifact should be encrypted and encrypts it
         - sign sw-description with one of the methods accepted by SWUpdate
         - pack all artifacts into a SWU file
+
+It maybe run in two steps to create an unsigned swu file and then sign it later in a second call::
+
+    swugenerator -o output.swu -a . -s sw-description.in create
+    swugenerator -o signed_output.swu -i output.swu -k CMS,key.pem,ca.crt sign
+
 
 Installation
 ============

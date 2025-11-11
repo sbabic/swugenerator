@@ -212,7 +212,11 @@ def mock_main_funcs(monkeypatch):
     def mock_argparse_error(*_):
         raise Exception
 
+    def mock_sign_swu(*_):
+        return True
+
     monkeypatch.setattr(main, "create_swu", mock_create_swu)
+    monkeypatch.setattr(main, "sign_swu", mock_sign_swu)
     monkeypatch.setattr(main, "extract_keys", mock_extract_keys)
     monkeypatch.setattr(main, "parse_signing_option", mock_parse_signing_option)
     monkeypatch.setattr(main, "parse_config_file", mock_parse_config_file)
@@ -268,6 +272,7 @@ VALID_COMMANDS = [
             "create",
         ]
     ),
+    (["-o", "test.swu", "sign", "-i", "in.swu"]),
 ]
 
 
@@ -277,6 +282,7 @@ def test_parsing_valid_args_doesnt_throw(args, mock_main_funcs):
 
 
 INVALID_COMMANDS = [
+    (["create"]),
     (["-s", "sw-description", "-o", "test.swu"]),
     (["-s", "-o", "test.swu", "create"]),
     (["-s", "sw-description", "-o", "create"]),
@@ -288,6 +294,12 @@ INVALID_COMMANDS = [
     (["-c", "sw-description", "-o", "test.swu", "create"]),
     (["-l", "sw-description", "-o", "test.swu", "create"]),
     (["-l", "baz", "sw-description", "-o", "test.swu", "create"]),
+    (["sign"]),
+    (["-o", "test.swu", "sign"]),
+    (["-i", "-o", "test.swu", "sign"]),
+    (["-i", "in.swu", "-o", "test.swu", "sign"]),
+    (["-o", "test.swu", "create"]),
+    (["-o", "sign", "-i", "in.swu"]),
 ]
 
 
