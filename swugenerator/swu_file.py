@@ -25,6 +25,7 @@ class SWUFile:
         """
         self.position = 0
         self.file = file
+        self.renumbered_inode_count = 0
         self.artifacts = []
         # for reading
         self.header = None
@@ -86,13 +87,21 @@ class SWUFile:
             raise CPIOException("File was changed while reading", cpio_filename)
         self.artifacts.append(cpio_filename)
 
+    def next_renumbered_inode(self):
+        """Make renumbered inode to be safe on 64 bit file systems.
+
+        Simply counting up inodes is enough since swupdate doesn't preserve hard links.
+        """
+        self.renumbered_inode_count += 1
+        return self.renumbered_inode_count
+
     def write_header(self, cpio_filename):
         if cpio_filename != "TRAILER!!!":
             statres = os.stat(cpio_filename)
             crc = self.cpiocrc(cpio_filename)
             base_filename = os.path.basename(cpio_filename)
             fields = [
-                statres.st_ino,
+                self.next_renumbered_inode(),
                 statres.st_mode,
                 statres.st_uid,
                 statres.st_gid,
