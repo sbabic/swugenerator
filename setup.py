@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="swugenerator",
-    version="0.5",
+    version="0.6",
     packages=find_packages(),
     url="https://github.com/sbabic/swugenerator",
     license="GPLv3",
