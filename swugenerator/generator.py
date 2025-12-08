@@ -66,6 +66,36 @@ class SWUGenerator:
         self.cpiofile.add_trailer()
         self.out.close()
 
+    def process_compressed_entry(self, entry, cmp, new):
+        cmds = {
+            "xz": ["xz", "-f", "-k", "-c"],
+            "zlib": ["gzip", "-f", "-9", "-n", "-c", "--rsyncable"],
+            "zstd": ["zstd", "-z", "-k", "-T0", "-f", "-c"],
+        }
+        cmd = cmds.get(cmp)
+        if not cmd:
+            logging.critical("Wrong compression algorithm: %s", cmp)
+            sys.exit(1)
+
+        new_path = os.path.join(self.temp.name, new.newfilename) + "." + cmp
+        new.newfilename = new.newfilename + "." + cmp
+
+        cmd.extend([new.fullfilename, ">", new_path])
+
+        try:
+            subprocess.run(" ".join(cmd), shell=True, check=True, text=True)
+        except subprocess.CalledProcessError:
+            logging.critical(
+                "Cannot compress %s with %s", entry["filename"], cmd
+            )
+            sys.exit(1)
+
+        new.fullfilename = new_path
+
+        if entry.get("type") == "ubivol":
+            entry.setdefault("properties", {}) \
+                 .update({ "decompressed-size": str(new.getsize()) })
+
     def process_entry(self, entry):
         if "filename" not in entry:
             return
@@ -83,52 +113,8 @@ class SWUGenerator:
 
             new.newfilename = entry["filename"]
 
-            if "compressed" in entry and not self.nocompress:
-                cmp = entry["compressed"]
-                if cmp not in ("zlib", "zstd"):
-                    logging.critical("Wrong compression algorithm: %s", cmp)
-                    sys.exit(1)
-
-                new_path = os.path.join(self.temp.name, new.newfilename) + "." + cmp
-                new.newfilename = new.newfilename + "." + cmp
-                if cmp == "zlib":
-                    cmd = [
-                        "gzip",
-                        "-f",
-                        "-9",
-                        "-n",
-                        "-c",
-                        "--rsyncable",
-                        new.fullfilename,
-                        ">",
-                        new_path,
-                    ]
-                else:
-                    cmd = [
-                        "zstd",
-                        "-z",
-                        "-k",
-                        "-T0",
-                        "-f",
-                        "-c",
-                        new.fullfilename,
-                        ">",
-                        new_path,
-                    ]
-
-                try:
-                    subprocess.run(" ".join(cmd), shell=True, check=True, text=True)
-                except subprocess.CalledProcessError:
-                    logging.critical(
-                        "Cannot compress %s with %s", entry["filename"], cmd
-                    )
-                    sys.exit(1)
-
-                new.fullfilename = new_path
-
-                if entry.get("type") == "ubivol":
-                    entry.setdefault("properties", {}) \
-                         .update({ "decompressed-size": str(new.getsize()) })
+            if not self.nocompress and (cmp := entry.get("compressed")):
+                self.process_compressed_entry(entry, cmp, new)
             # compression cannot be used with delta, because it has own compressor
             elif ("type" in entry) and entry["type"] == "delta":
                 cmd = [
