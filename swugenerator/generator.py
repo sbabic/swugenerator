@@ -92,10 +92,6 @@ class SWUGenerator:
 
         new.fullfilename = new_path
 
-        if entry.get("type") == "ubivol":
-            entry.setdefault("properties", {}) \
-                 .update({ "decompressed-size": str(new.getsize()) })
-
     def process_entry(self, entry):
         if "filename" not in entry:
             return
@@ -203,6 +199,9 @@ class SWUGenerator:
             entry["sha256"] = new.getsha256()
         if "encrypted" in entry and entry["encrypted"] is True:
             entry["ivt"] = new.ivt
+        if entry.get("compressed") and not self.nocompress:
+            entry.setdefault("properties", {}) \
+                 .update({ "decompressed-size": str(new.getsize()) })
 
     def find_files_in_swdesc(self, first):
         for n, val in first.items():
