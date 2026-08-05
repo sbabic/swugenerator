@@ -48,7 +48,8 @@ class SWUSign:
 
 
 class SWUSignCMS(SWUSign):
-    def __init__(self, key, cert, passin, certfile, engine=None, keyform=None):
+    def __init__(self, key, cert, passin, certfile, engine=None, keyform=None,
+                 provider=None, provider_path=None):
         super().__init__()
         self.type = "CMS"
         self.key = key
@@ -57,6 +58,8 @@ class SWUSignCMS(SWUSign):
         self.certfile = certfile
         self.engine = engine
         self.keyform = keyform
+        self.provider = provider
+        self.provider_path = provider_path
 
     def prepare_cmd(self, sw_desc_in, sw_desc_sig):
         self.signcmd = [
@@ -70,6 +73,10 @@ class SWUSignCMS(SWUSign):
             "-signer",
             self.cert,
         ]
+        if self.provider_path:
+            self.signcmd += ["-provider-path", self.provider_path]
+        if self.provider:
+            self.signcmd += ["-provider", "default", "-provider", self.provider]
         if self.engine:
             self.signcmd += ["-engine", self.engine]
         if self.keyform:
