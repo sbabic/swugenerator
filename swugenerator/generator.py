@@ -298,24 +298,21 @@ class SWUGenerator:
         for artifact in self.artifacts:
             self.cpiofile.addartifacttoswu(artifact.fullfilename)
 
+    def _expand_variable(self, m):
+        name = m.group("variable_name")
+        if name not in self.vars:
+            logging.critical("Variable %s in sw-description is not defined", name)
+            sys.exit(1)
+        return str(self.vars[name])
+
     def _expand_variables(self):
+        variable = re.compile(r"@@(?P<variable_name>\w+)@@")
         write_lines = []
         for line in self.lines:
-            while True:
-                m = re.match(
-                    r"^(?P<before_placeholder>.+)@@(?P<variable_name>\w+)@@(?P<after_placeholder>.+)$",
-                    line,
-                )
-                if m:
-                    variable_value = self.vars[m.group("variable_name")]
-                    line = (
-                        m.group("before_placeholder")
-                        + variable_value
-                        + m.group("after_placeholder")
-                    )
-                    continue
-                else:
-                    break
+            # values can contain further variables
+            expanded = 1
+            while expanded:
+                line, expanded = variable.subn(self._expand_variable, line)
             write_lines.append(line)
         self.lines = write_lines
 
