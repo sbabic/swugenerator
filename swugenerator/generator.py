@@ -307,30 +307,24 @@ class SWUGenerator:
             write_lines.append(line)
         self.lines = write_lines
 
-    def _exec_functions(self):
-        for index, line in enumerate(self.lines):
-            m = re.match(
-                r"^(?P<before_placeholder>.+)\$(?P<function_name>\w+)\((?P<parms>.+)\)(?P<after_placeholder>.+)$",
-                line,
+    def _call_function(self, m):
+        name = m.group("function_name")
+        if name not in self.TEMPLATE_FUNCTIONS:
+            logging.critical("Unknown function %s in sw-description", name)
+            sys.exit(1)
+        ret = getattr(self, name)(m.group("parms"))
+        if ret is None:
+            logging.critical(
+                "%s(%s) failed: artifact not found", name, m.group("parms")
             )
-            if m:
-                name = m.group("function_name")
-                if name not in self.TEMPLATE_FUNCTIONS:
-                    logging.critical("Unknown function %s in sw-description", name)
-                    sys.exit(1)
-                ret = getattr(self, name)(m.group("parms"))
-                if ret is None:
-                    logging.critical(
-                        "%s(%s) failed: artifact not found", name, m.group("parms")
-                    )
-                    sys.exit(1)
-                line = (
-                    m.group("before_placeholder")
-                    + ret
-                    + m.group("after_placeholder")
-                    + "\n"
-                )
-                self.lines[index] = line
+            sys.exit(1)
+        return ret
+
+    def _exec_functions(self):
+        # parameters end at the first ')', so other parentheses
+        # on the same line are not taken as part of them
+        function = re.compile(r"\$(?P<function_name>\w+)\((?P<parms>[^)]+)\)")
+        self.lines = [function.sub(self._call_function, line) for line in self.lines]
 
     def setenckey(self, k, iv):
         self.aeskey = k
