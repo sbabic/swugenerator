@@ -77,7 +77,7 @@ class SWUFile:
                 "Too big file size for this CPIO format", statres.st_size
             )
 
-        if not stat.S_ISREG(statres.st_mode) or not size:
+        if not stat.S_ISREG(statres.st_mode):
             raise CPIOException("File is not a regular file")
 
         if cpio_filename == b"TRAILER!!!":
