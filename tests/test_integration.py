@@ -1,5 +1,6 @@
 # pylint: disable=C0114,C0116,W0621
 """This file hosts integration tests to ensure tool creates valid SWUs"""
+from itertools import zip_longest
 from pathlib import Path
 import pytest
 import shutil
@@ -97,18 +98,21 @@ def validate_swu(output_swu, encrypted=False):
     reference_swu = (
         Path(__file__).parent / "test_data/integration_output" / output_swu.name
     )
-    with libarchive.Archive(output_swu.open()) as output, libarchive.Archive(
-        reference_swu.open()
+    with libarchive.file_reader(str(output_swu)) as output, libarchive.file_reader(
+        str(reference_swu)
     ) as reference:
-        for output_file, reference_file in zip(output, reference):
+        for output_file, reference_file in zip_longest(output, reference):
+            if output_file is None or reference_file is None:
+                print("Number of files does not match")
+                return False
             if output_file.pathname != reference_file.pathname:
                 print("Names do not match")
                 return False
             if output_file.size != reference_file.size:
                 print("Sizes do not match")
                 return False
-            if not encrypted and output.read(output_file.size) != reference.read(
-                output_file.size
+            if not encrypted and b"".join(output_file.get_blocks()) != b"".join(
+                reference_file.get_blocks()
             ):
                 print("File contents are not equal")
                 return False
