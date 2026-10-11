@@ -309,10 +309,18 @@ class SWUGenerator:
         variable = re.compile(r"@@(?P<variable_name>\w+)@@")
         write_lines = []
         for line in self.lines:
-            # values can contain further variables
-            expanded = 1
-            while expanded:
+            # values can contain further variables: without a loop between
+            # them, they are all expanded after len(self.vars) passes
+            for _ in range(len(self.vars) + 1):
                 line, expanded = variable.subn(self._expand_variable, line)
+                if not expanded:
+                    break
+            else:
+                logging.critical(
+                    "Recursive variable definition in sw-description: %s",
+                    line.strip(),
+                )
+                sys.exit(1)
             write_lines.append(line)
         self.lines = write_lines
 
