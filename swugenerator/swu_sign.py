@@ -1,7 +1,6 @@
 # Copyright (C) 2022 Stefano Babic
 #
 # SPDX-License-Identifier: GPLv3
-import copy
 import logging
 import subprocess
 import sys
@@ -14,7 +13,6 @@ class SWUSign:
         self.type = None
         self.key = None
         self.cert = None
-        self.cmd = None
         self.passin = None
         self.certfile = None
         self.signcmd = []

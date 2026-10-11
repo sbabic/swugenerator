@@ -196,11 +196,6 @@ def create_swu(args: argparse.Namespace) -> None:
     # Add current working directory to search path
     args.artifactory.append(Path(os.getcwd()))
 
-    # Pass engine and keyform to parse_signing_option if sign is set
-    if hasattr(args, 'sign') and args.sign and isinstance(args.sign, str):
-        args.sign = parse_signing_option(args.sign, args.engine, args.keyform,
-                                         args.provider, args.provider_path)
-
     swu = generator.SWUGenerator(
         args.sw_description,
         args.swu_file,
@@ -391,7 +386,7 @@ def parse_args(args: List[str]) -> None:
         help="SWU input file to be signed, required for the sign command",
     )
     args = parser.parse_args(args)
-    if hasattr(args, 'sign') and args.sign:
+    if args.sign:
         args.sign = parse_signing_option(args.sign, args.engine, args.keyform,
                                          args.provider, args.provider_path)
     if args.func == create_swu and not args.sw_description:

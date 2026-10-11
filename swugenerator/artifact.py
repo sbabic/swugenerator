@@ -11,7 +11,6 @@ class Artifact:
         self.filename = filename
         self.newfilename = filename
         self.fullfilename = filename
-        self._available = False
         self.sha256 = ""
         self.ivt = ""
         self.size = 0
