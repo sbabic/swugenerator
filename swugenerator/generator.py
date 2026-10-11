@@ -227,9 +227,9 @@ class SWUGenerator:
         entry["filename"] = new.newfilename
         if not self.nohash:
             entry["sha256"] = new.getsha256()
-        if "encrypted" in entry and entry["encrypted"] is True:
-            entry["ivt"] = new.ivt
+        # with --no-encrypt, keep the ivt set in sw-description, if any
         if processing[2]:
+            entry["ivt"] = new.ivt
             entry.setdefault("properties", {}) \
                  .update({ "decrypted-size": str(new.getsize()) })
         if entry.get("compressed") and not self.nocompress:
