@@ -193,6 +193,45 @@ def test_parse_signing_option_cms_with_engine_and_keyform():
     assert obj.passin == "baz"
     assert obj.certfile == "qux"
 
+def test_parse_signing_option_cms_with_provider():
+    # Only provider
+    obj = main.parse_signing_option("CMS,foo,bar,baz,qux", provider="myprovider")
+    assert isinstance(obj, SWUSignCMS)
+    assert obj.provider == "myprovider"
+    assert obj.key == "foo"
+    assert obj.cert == "bar"
+    assert obj.passin == "baz"
+    assert obj.certfile == "qux"
+
+    # Only provider-path
+    obj = main.parse_signing_option("CMS,foo,bar,baz,qux", provider_path="/my/path")
+    assert isinstance(obj, SWUSignCMS)
+    assert obj.provider_path == "/my/path"
+    assert obj.key == "foo"
+    assert obj.cert == "bar"
+    assert obj.passin == "baz"
+    assert obj.certfile == "qux"
+
+    # Both provider and provider-path
+    obj = main.parse_signing_option("CMS,foo,bar,baz,qux",
+                                    provider="myprovider", provider_path="/my/path")
+    assert isinstance(obj, SWUSignCMS)
+    assert obj.provider == "myprovider"
+    assert obj.provider_path == "/my/path"
+    assert obj.key == "foo"
+    assert obj.cert == "bar"
+    assert obj.passin == "baz"
+    assert obj.certfile == "qux"
+
+    # Neither provider nor provider-path
+    obj = main.parse_signing_option("CMS,foo,bar,baz,qux")
+    assert isinstance(obj, SWUSignCMS)
+    assert obj.provider is None
+    assert obj.provider_path is None
+    assert obj.key == "foo"
+    assert obj.cert == "bar"
+    assert obj.passin == "baz"
+    assert obj.certfile == "qux"
 
 #### Parse args tests ####
 @pytest.fixture
