@@ -152,6 +152,11 @@ class SWUGenerator:
                     sys.exit(1)
 
                 found_header =  re.search(r"Header size: (\d+)", result.stdout)
+                if not found_header:
+                    logging.critical(
+                        "Cannot find ZCK Header size for %s in %s", entry["filename"], cmd
+                    )
+                    sys.exit(1)
                 header_size = int(found_header.group(1))
                 zckheaderfile = os.path.join(self.temp.name, new.newfilename)
 
