@@ -261,7 +261,11 @@ def parse_args(args: List[str]) -> None:
         "-e",
         "--no-encrypt",
         action="store_true",
-        help="Do not encrypt files",
+        help=textwrap.dedent(
+            """\
+            Do not encrypt files, for artifacts that are already encrypted.
+            encrypted and ivt are kept as set in sw-description"""
+        ),
     )
 
     parser.add_argument(

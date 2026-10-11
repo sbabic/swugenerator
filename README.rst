@@ -25,7 +25,8 @@ optional arguments:
   -K ENCRYPTION_KEY_FILE, --encryption-key-file ENCRYPTION_KEY_FILE
                         AES Key to encrypt artifacts
   -n, --no-compress     Do not compress files
-  -e, --no-encrypt      Do not encrypt files
+  -e, --no-encrypt      Do not encrypt files, for artifacts that are already encrypted.
+                        encrypted and ivt are kept as set in sw-description
   -x, --no-ivt          Do not generate IV when encrypting
   -y, --no-hash         Do not store sha256 hash in sw-description
   -k SIGN, --sign SIGN  RSA key or certificate to sign the SWU
