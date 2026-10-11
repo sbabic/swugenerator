@@ -167,8 +167,11 @@ class SWUFile:
         filedata = self.file.read(c_filesize)
         pad = (4 - c_filesize % 4) % 4
         self.file.read(pad)
-        # Compute output path
-        path = os.path.join(dir, name)
+        # Compute output path, it must not escape from dir
+        root = os.path.realpath(dir)
+        path = os.path.realpath(os.path.join(root, name))
+        if path == root or os.path.commonpath([root, path]) != root:
+            raise FormatException(f"Invalid file name in archive: {name}")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         # check if its really a file
         if c_mode & 0o170000 != 0o040000:
