@@ -311,7 +311,7 @@ VALID_COMMANDS = [
             "create",
         ]
     ),
-    (["-o", "test.swu", "sign", "-i", "in.swu"]),
+    (["-k", "CUSTOM,foo", "-o", "test.swu", "sign", "-i", "in.swu"]),
 ]
 
 
@@ -337,6 +337,7 @@ INVALID_COMMANDS = [
     (["-o", "test.swu", "sign"]),
     (["-i", "-o", "test.swu", "sign"]),
     (["-i", "in.swu", "-o", "test.swu", "sign"]),
+    (["-o", "test.swu", "sign", "-i", "in.swu"]),
     (["-o", "test.swu", "create"]),
     (["-o", "sign", "-i", "in.swu"]),
 ]

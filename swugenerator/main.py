@@ -398,6 +398,10 @@ def parse_args(args: List[str]) -> None:
         parser.error(
             "the following arguments are required: -s/--sw-description"
         )
+    if args.func == sign_swu and not args.sign:
+        parser.error(
+            "the following arguments are required: -k/--sign"
+        )
 
     args.func(args)
 
