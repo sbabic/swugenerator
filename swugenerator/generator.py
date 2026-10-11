@@ -1,7 +1,6 @@
 # Copyright (C) 2022 Stefano Babic
 #
 # SPDX-License-Identifier: GPLv3
-import codecs
 import logging
 import os
 import re
@@ -60,7 +59,7 @@ class SWUGenerator:
         return secrets.token_hex(16)
 
     def _read_swdesc(self):
-        with codecs.open(self.swdescription, "r") as f:
+        with open(self.swdescription, "r", encoding="utf-8") as f:
             self.lines = f.readlines()
             f.close()
 
@@ -233,7 +232,7 @@ class SWUGenerator:
                     self.filelist.append(first)
 
     def save_swdescription(self, filename, contents):
-        with codecs.open(filename, "w", "utf-8") as swd:
+        with open(filename, "w", encoding="utf-8") as swd:
             swd.write(contents)
 
     def process(self):
@@ -351,6 +350,7 @@ class SWUGenerator:
         a = Artifact(filename)
         if a.findfile(self.artifactory):
             return a.getsha256()
+        return None
 
     def swupdate_get_size(self, filename):
         a = Artifact(filename)

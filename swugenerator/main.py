@@ -125,11 +125,10 @@ def parse_signing_option(
         if len(sign_parms) == 5:
             return SWUSignCMS(sign_parms[1], sign_parms[2], sign_parms[3], sign_parms[4], engine, keyform, provider, provider_path)
         # Format : CMS,<private key>,<certificate used to sign>,<file with password>
-        elif len(sign_parms) == 4:
+        if len(sign_parms) == 4:
             return SWUSignCMS(sign_parms[1], sign_parms[2], sign_parms[3], None, engine, keyform, provider, provider_path)
         # Format : CMS,<private key>,<certificate used to sign>
-        else:
-            return SWUSignCMS(sign_parms[1], sign_parms[2], None, None, engine, keyform, provider, provider_path)
+        return SWUSignCMS(sign_parms[1], sign_parms[2], None, None, engine, keyform, provider, provider_path)
     if cmd[:3] == "RSA":
         if len(sign_parms) not in (2, 3) or not all(sign_parms):
             raise InvalidSigningOption(
@@ -389,11 +388,11 @@ def parse_args(args: List[str]) -> None:
     if args.sign:
         args.sign = parse_signing_option(args.sign, args.engine, args.keyform,
                                          args.provider, args.provider_path)
-    if args.func == create_swu and not args.sw_description:
+    if args.func is create_swu and not args.sw_description:
         parser.error(
             "the following arguments are required: -s/--sw-description"
         )
-    if args.func == sign_swu and not args.sign:
+    if args.func is sign_swu and not args.sign:
         parser.error(
             "the following arguments are required: -k/--sign"
         )

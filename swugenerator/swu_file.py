@@ -160,15 +160,15 @@ class SWUFile:
 
         self.position = 0
 
-    def _extract_file(self, dir, name):
+    def _extract_file(self, outdir, name):
         c_mode = int(self.header[14:22], 16)
         c_filesize = int(self.header[54:62], 16)
         # Read file data
         filedata = self.file.read(c_filesize)
         pad = (4 - c_filesize % 4) % 4
         self.file.read(pad)
-        # Compute output path, it must not escape from dir
-        root = os.path.realpath(dir)
+        # Compute output path, it must not escape from outdir
+        root = os.path.realpath(outdir)
         path = os.path.realpath(os.path.join(root, name))
         if path == root or os.path.commonpath([root, path]) != root:
             raise FormatException(f"Invalid file name in archive: {name}")
@@ -180,7 +180,7 @@ class SWUFile:
             try:
                 # preserve mode
                 os.chmod(path, c_mode & 0o7777)
-            except Exception:
+            except OSError:
                 pass
         # check CRC
         outcrc = self.cpiocrc(path)
@@ -190,12 +190,12 @@ class SWUFile:
                 f"Wrong file crc {incrc} vs. {outcrc}"
             )
 
-    def _extract_next(self, dir):
+    def _extract_next(self, outdir):
         # Read fixed-size header (110 bytes for "newc" format)
         self.header = self.file.read(110)
         if len(self.header) < 110:
             raise FormatException(
-                f"Unknown or unsupported header format. "
+                "Unknown or unsupported header format."
             )
         # Parse fields: all are ASCII hex numbers
         c_magic = self.header[0:6].decode()
@@ -215,15 +215,15 @@ class SWUFile:
         pad = (4 - (110 + c_namesize) % 4) % 4
         self.file.read(pad)
         self.artifacts.append(name)
-        self._extract_file(dir, name)
+        self._extract_file(outdir, name)
 
 		# lets continue
         return True
 
-    def extract(self, dir):
+    def extract(self, outdir):
         # extract all files from the swu file
         next_file = True
         while next_file:
-            next_file = self._extract_next(dir)
+            next_file = self._extract_next(outdir)
 
         return self.artifacts

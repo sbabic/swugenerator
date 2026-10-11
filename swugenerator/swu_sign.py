@@ -107,10 +107,9 @@ class SWUSignRSA(SWUSign):
         if self.mode == self.RSAMode.PSS:
             return ["-sigopt", "rsa_padding_mode:pss",
                     "-sigopt", "rsa_pss_saltlen:-2"]
-        elif self.mode == self.RSAMode.PKCS1:
+        if self.mode == self.RSAMode.PKCS1:
             return []
-        else:
-            raise ValueError(f"Unknown or unsupported RSA mode: {self.mode}")
+        raise ValueError(f"Unknown or unsupported RSA mode: {self.mode}")
 
     def prepare_cmd(self, sw_desc_in, sw_desc_sig):
         self.signcmd = (

@@ -49,4 +49,3 @@ class SWUSigner:
         for name in artifacts:
             path = Path(self.temp.name) / name
             self.cpio_out.addartifacttoswu(path)
-
