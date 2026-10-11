@@ -80,11 +80,12 @@ class SWUGenerator:
         new_path = os.path.join(self.temp.name, new.newfilename) + "." + cmp
         new.newfilename = new.newfilename + "." + cmp
 
-        cmd.extend([new.fullfilename, ">", new_path])
+        cmd = cmd + [new.fullfilename]
 
         try:
-            subprocess.run(" ".join(cmd), shell=True, check=True, text=True)
-        except subprocess.CalledProcessError:
+            with open(new_path, "wb") as compressed:
+                subprocess.run(cmd, stdout=compressed, check=True)
+        except (subprocess.CalledProcessError, OSError):
             logging.critical(
                 "Cannot compress %s with %s", entry["filename"], cmd
             )
@@ -118,13 +119,13 @@ class SWUGenerator:
                     "-u",
                     "--chunk-hash-type",
                     "sha256",
-                   "--output",
+                    "--output",
                     new.fullfilename + ".zck",
                     new.fullfilename,
                 ]
                 try:
-                    subprocess.run(" ".join(cmd), shell=True, check=True, text=True)
-                except subprocess.CalledProcessError:
+                    subprocess.run(cmd, check=True)
+                except (subprocess.CalledProcessError, OSError):
                     logging.critical(
                         "Cannot create ZCK %s with %s", entry["filename"], cmd
                     )
@@ -137,12 +138,11 @@ class SWUGenerator:
                     new.fullfilename + ".zck",
                 ]
                 try:
-                    result =  subprocess.run(" ".join(cmd),
-                                             shell=True,
-                                             check=True,
-                                             capture_output=True,
-                                             text=True)
-                except subprocess.CalledProcessError:
+                    result = subprocess.run(cmd,
+                                            check=True,
+                                            capture_output=True,
+                                            text=True)
+                except (subprocess.CalledProcessError, OSError):
                     logging.critical(
                         "Cannot extract ZCK Header %s with %s", entry["filename"], cmd
                     )
