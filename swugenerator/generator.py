@@ -18,6 +18,9 @@ from swugenerator.artifact import Artifact
 
 
 class SWUGenerator:
+    # functions that can be called from sw-description as $name(parms)
+    TEMPLATE_FUNCTIONS = ("swupdate_get_sha256", "swupdate_get_size")
+
     def __init__(
         self,
         template,
@@ -311,10 +314,16 @@ class SWUGenerator:
                 line,
             )
             if m:
-                fun = (
-                    "self." + m.group("function_name") + '("' + m.group("parms") + '")'
-                )
-                ret = eval(fun)
+                name = m.group("function_name")
+                if name not in self.TEMPLATE_FUNCTIONS:
+                    logging.critical("Unknown function %s in sw-description", name)
+                    sys.exit(1)
+                ret = getattr(self, name)(m.group("parms"))
+                if ret is None:
+                    logging.critical(
+                        "%s(%s) failed: artifact not found", name, m.group("parms")
+                    )
+                    sys.exit(1)
                 line = (
                     m.group("before_placeholder")
                     + ret
