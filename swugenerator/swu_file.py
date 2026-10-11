@@ -5,6 +5,7 @@
 # This class manages to pack the SWU file and
 # extracts a SWU file with returning the list.
 # It has methods to add files to the archive.
+import logging
 import os
 import stat
 
