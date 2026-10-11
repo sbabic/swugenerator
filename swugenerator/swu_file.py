@@ -58,8 +58,7 @@ class SWUFile:
         with open(cpio_filename, "rb") as rd:
             chunk = rd.read(65536)
             while chunk:
-                for b in chunk:
-                    crc += b
+                crc += sum(chunk)
                 chunk = rd.read(65536)
         crc = crc & 0xFFFFFFFF
         return crc
