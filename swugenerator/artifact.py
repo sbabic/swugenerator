@@ -24,7 +24,7 @@ class Artifact:
         m = hashlib.sha256()
         with open(os.path.join(self.fullfilename), "rb") as f:
             while True:
-                data = f.read(1024)
+                data = f.read(65536)
                 if not data:
                     break
                 m.update(data)
@@ -37,7 +37,6 @@ class Artifact:
             fname = os.path.join(libdir, self.filename)
             if os.path.exists(fname):
                 self.fullfilename = fname
-                self.sha256 = self.getsha256()
                 self.size = os.path.getsize(fname)
                 return True
         return False

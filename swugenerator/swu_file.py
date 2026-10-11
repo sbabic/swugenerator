@@ -10,6 +10,10 @@ import os
 import stat
 
 
+# offset of the checksum in the header: magic + 12 fields of 8 bytes
+CHECKSUM_OFFSET = 6 + 12 * 8
+
+
 class CPIOException(Exception):
     pass
 
@@ -83,7 +87,12 @@ class SWUFile:
         if cpio_filename == b"TRAILER!!!":
             raise CPIOException("Attempt to pass reserved filename", cpio_filename)
 
-        self.write_header(cpio_filename)
+        # If the output is seekable, compute the checksum while copying
+        # the file and write it into the header afterwards, so that the
+        # file is read just once.
+        seekable = self.file.seekable()
+        crc = 0
+        header_pos = self.write_header(cpio_filename, 0 if seekable else None)
 
         self._align()
         with open(cpio_filename, "rb") as xxx:
@@ -92,9 +101,15 @@ class SWUFile:
                 if not chunk:
                     break
                 self._rawwrite(chunk)
+                crc += sum(chunk)
                 size -= len(chunk)
         if size:
             raise CPIOException("File was changed while reading", cpio_filename)
+        if seekable:
+            end = self.file.tell()
+            self.file.seek(header_pos + CHECKSUM_OFFSET)
+            self.file.write(bytes(f"{crc & 0xFFFFFFFF:08X}", "ascii"))
+            self.file.seek(end)
         self.artifacts.append(cpio_filename)
 
     def next_renumbered_inode(self):
@@ -105,10 +120,15 @@ class SWUFile:
         self.renumbered_inode_count += 1
         return self.renumbered_inode_count
 
-    def write_header(self, cpio_filename):
+    def write_header(self, cpio_filename, crc=None):
+        """Writes the header, computing the checksum if crc is None.
+
+        Returns the offset of the header in the output file.
+        """
         if cpio_filename != "TRAILER!!!":
             statres = os.stat(cpio_filename)
-            crc = self.cpiocrc(cpio_filename)
+            if crc is None:
+                crc = self.cpiocrc(cpio_filename)
             base_filename = os.path.basename(cpio_filename)
             st_dev = statres.st_dev if os.name == "posix" else 0
             st_rdev = statres.st_rdev if os.name == "posix" else 0
@@ -136,6 +156,7 @@ class SWUFile:
             fields = [0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, len(base_filename) + 1, 0]
 
         self._align()
+        header_pos = self.file.tell() if self.file.seekable() else None
         self._rawwrite(b"070702")
         for i, value in enumerate(fields):
             # UNIX epoch overflow, negative timestamps and so on...
@@ -146,6 +167,7 @@ class SWUFile:
 
         fn = bytes(base_filename, "ascii") + b"\x00"
         self._rawwrite(fn)
+        return header_pos
 
     def add_trailer(self):
         try:
