@@ -14,6 +14,8 @@ class Artifact:
         self.sha256 = ""
         self.ivt = ""
         self.size = 0
+        # (compression, delta, encryption) applied to the file
+        self.processing = None
 
     def exist(self):
         return os.path.exists(self.filename)

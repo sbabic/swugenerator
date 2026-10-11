@@ -102,17 +102,27 @@ class SWUGenerator:
 
         new.fullfilename = new_path
 
+    def _processing(self, entry):
+        """Returns how the artifact of an entry is processed before packing"""
+        cmp = None if self.nocompress else entry.get("compressed")
+        delta = not cmp and entry.get("type") == "delta"
+        encrypt = entry.get("encrypted") is True and not self.noencrypt
+        return (cmp, delta, encrypt)
+
     def process_entry(self, entry):
         if "filename" not in entry:
             return
+        processing = self._processing(entry)
         new = None
         for image in self.artifacts:
-            if image.filename == entry["filename"]:
+            # the same file can be reused only if processed in the same way
+            if image.filename == entry["filename"] and image.processing == processing:
                 new = image
                 break
         if not new:
             logging.debug("New artifact %s", entry["filename"])
             new = Artifact(entry["filename"])
+            new.processing = processing
             if not new.findfile(self.artifactory):
                 logging.critical("Artifact %s not found", entry["filename"])
                 sys.exit(22)
@@ -203,9 +213,13 @@ class SWUGenerator:
                 entry["ivt"] = iv
                 new.ivt = iv
 
-                entry.setdefault("properties", {}) \
-                    .update({ "decrypted-size": str(new.getsize()) })
-
+            for image in self.artifacts:
+                if image.newfilename == new.newfilename:
+                    logging.critical(
+                        "%s is used with incompatible attributes, it would be stored twice as %s",
+                        entry["filename"], new.newfilename,
+                    )
+                    sys.exit(1)
             self.artifacts.append(new)
         else:
             logging.debug("Artifact %s already stored", entry["filename"])
@@ -215,6 +229,9 @@ class SWUGenerator:
             entry["sha256"] = new.getsha256()
         if "encrypted" in entry and entry["encrypted"] is True:
             entry["ivt"] = new.ivt
+        if processing[2]:
+            entry.setdefault("properties", {}) \
+                 .update({ "decrypted-size": str(new.getsize()) })
         if entry.get("compressed") and not self.nocompress:
             entry.setdefault("properties", {}) \
                  .update({ "decompressed-size": str(new.getsize()) })
