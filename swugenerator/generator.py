@@ -69,6 +69,13 @@ class SWUGenerator:
         self.cpiofile.add_trailer()
         self.out.close()
 
+    def abort(self):
+        # do not leave an incomplete SWU behind
+        self.temp.cleanup()
+        self.out.close()
+        if os.path.exists(self.out.name):
+            os.remove(self.out.name)
+
     def process_compressed_entry(self, entry, cmp, new):
         cmds = {
             "xz": ["xz", "-f", "-k", "-c"],

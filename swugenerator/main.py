@@ -215,8 +215,12 @@ def create_swu(args: argparse.Namespace) -> None:
         args.no_ivt,
         args.no_hash,
     )
-    swu.process()
-    swu.close()
+    try:
+        swu.process()
+        swu.close()
+    except BaseException:
+        swu.abort()
+        raise
 
 def sign_swu(args: argparse.Namespace) -> None:
     swu = signer.SWUSigner(
@@ -224,8 +228,12 @@ def sign_swu(args: argparse.Namespace) -> None:
         args.swu_file,
         args.sign
     )
-    swu.process()
-    swu.close()
+    try:
+        swu.process()
+        swu.close()
+    except BaseException:
+        swu.abort()
+        raise
 
 def parse_args(args: List[str]) -> None:
     """Sets up arguments for swugenerator and parses commandline args

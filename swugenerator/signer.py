@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: GPLv3
 import logging
+import os
 from tempfile import TemporaryDirectory
 from pathlib import Path
 
@@ -21,6 +22,14 @@ class SWUSigner:
         self.fin.close()
         self.cpio_out.add_trailer()
         self.fout.close()
+
+    def abort(self):
+        # do not leave an incomplete SWU behind
+        self.temp.cleanup()
+        self.fin.close()
+        self.fout.close()
+        if os.path.exists(self.fout.name):
+            os.remove(self.fout.name)
 
     def process(self):
         # extract the swu file and get the file list
