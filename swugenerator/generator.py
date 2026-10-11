@@ -169,12 +169,14 @@ class SWUGenerator:
                         "%s must be encrypted, but no encryption key is given",
                         entry["filename"],
                     )
+                    sys.exit(1)
                 if self.noivt:
                     if not self.aesiv:
                         logging.critical(
                             "%s must be encrypted, but no initialization vector is given",
                             entry["filename"],
                         )
+                        sys.exit(1)
                     iv = self.aesiv
                 else:
                     iv = self.generate_iv()
@@ -265,10 +267,12 @@ class SWUGenerator:
                 logging.critical(
                     "sw-description must be encrypted, but no encryption key is given"
                 )
+                sys.exit(1)
             if not self.aesiv:
                 logging.critical(
                     "sw-description must be encrypted, but no initialization vector is given"
                 )
+                sys.exit(1)
 
             iv = self.aesiv
             sw.fullfilename = swdesc_filename
