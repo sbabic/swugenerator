@@ -84,12 +84,30 @@ def signing_key(input_directory):
 
 
 @pytest.fixture()
+def encryption_key_legacy(input_directory):
+    """Creates encryption key legacy format"""
+    encryption_key_filename = "valid_key_legacy.txt"
+    encryption_key_path = input_directory / encryption_key_filename
+    with encryption_key_path.open("w") as key_key_fd:
+        key_key_fd.write(f"key={VALID_KEY}\niv={VALID_IV}")
+    return encryption_key_path
+
+@pytest.fixture()
 def encryption_key(input_directory):
     """Creates encryption key"""
     encryption_key_filename = "valid_key.txt"
     encryption_key_path = input_directory / encryption_key_filename
     with encryption_key_path.open("w") as key_key_fd:
-        key_key_fd.write(f"key={VALID_KEY}\niv={VALID_IV}")
+        key_key_fd.write(f"{VALID_KEY} {VALID_IV}")
+    return encryption_key_path
+
+@pytest.fixture()
+def encryption_key_no_iv(input_directory):
+    """Creates encryption key without iv"""
+    encryption_key_filename = "valid_key_no_iv.txt"
+    encryption_key_path = input_directory / encryption_key_filename
+    with encryption_key_path.open("w") as key_key_fd:
+        key_key_fd.write(f"{VALID_KEY}")
     return encryption_key_path
 
 
@@ -158,6 +176,54 @@ def test_command_with_sign_flag_creates_valid_signed_swu(
     main.parse_args(command_args)
     assert validate_swu(output_directory / output_file)
 
+
+def test_command_with_encryption_flag_creates_encrypted_swu_legacy(
+    artifactory,
+    encrypted_sw_description_template,
+    config_file,
+    encryption_key_legacy,
+    output_directory,
+):
+    output_file = "output.swu.enc"
+    command_args = [
+        "-s",
+        str(encrypted_sw_description_template),
+        "-a",
+        str(artifactory),
+        "-c",
+        str(config_file),
+        "-K",
+        str(encryption_key_legacy),
+        "-o",
+        str((output_directory / output_file).resolve()),
+        "create",
+    ]
+    main.parse_args(command_args)
+    assert validate_swu(output_directory / output_file, encrypted=True)
+
+def test_command_with_encryption_flag_creates_encrypted_swu_no_iv(
+    artifactory,
+    encrypted_sw_description_template,
+    config_file,
+    encryption_key_no_iv,
+    output_directory,
+):
+    output_file = "output.swu.enc"
+    command_args = [
+        "-s",
+        str(encrypted_sw_description_template),
+        "-a",
+        str(artifactory),
+        "-c",
+        str(config_file),
+        "-K",
+        str(encryption_key_no_iv),
+        "-o",
+        str((output_directory / output_file).resolve()),
+        "create",
+    ]
+    main.parse_args(command_args)
+    assert validate_swu(output_directory / output_file, encrypted=True)
 
 def test_command_with_encryption_flag_creates_encrypted_swu(
     artifactory,
