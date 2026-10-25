@@ -254,8 +254,12 @@ def mock_main_funcs(monkeypatch):
     def mock_sign_swu(*_):
         return True
 
+    def mock_mender_swu(*_):
+        return True
+
     monkeypatch.setattr(main, "create_swu", mock_create_swu)
     monkeypatch.setattr(main, "sign_swu", mock_sign_swu)
+    monkeypatch.setattr(main, "mender_swu", mock_mender_swu)
     monkeypatch.setattr(main, "extract_keys", mock_extract_keys)
     monkeypatch.setattr(main, "parse_signing_option", mock_parse_signing_option)
     monkeypatch.setattr(main, "parse_config_file", mock_parse_config_file)
@@ -312,6 +316,11 @@ VALID_COMMANDS = [
         ]
     ),
     (["-k", "CUSTOM,foo", "-o", "test.swu", "sign", "-i", "in.swu"]),
+    (["-o", "test.mender", "mender", "-i", "in.swu", "-D", "board"]),
+    (["-o", "test.mender", "mender", "-i", "in.swu", "-D", "a", "-D", "b",
+      "-N", "release-2", "-T", "swu", "-C", "xz"]),
+    (["--swu-file", "test.mender", "mender", "--swu-in-file", "in.swu",
+      "--device-type", "board", "--artifact-name", "r", "--compression", "none"]),
 ]
 
 
@@ -340,6 +349,11 @@ INVALID_COMMANDS = [
     (["-o", "test.swu", "sign", "-i", "in.swu"]),
     (["-o", "test.swu", "create"]),
     (["-o", "sign", "-i", "in.swu"]),
+    (["-o", "test.mender", "mender"]),
+    (["-o", "test.mender", "mender", "-i", "in.swu"]),
+    (["-o", "test.mender", "mender", "-D", "board"]),
+    (["-o", "test.mender", "mender", "-i", "in.swu", "-D", "board", "-C", "zstd"]),
+    (["mender", "-i", "in.swu", "-D", "board"]),
 ]
 
 

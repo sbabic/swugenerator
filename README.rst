@@ -16,9 +16,10 @@ Generator SWU Packages for SWUpdate
 
 positional arguments:
   command:
-    {create,sign}         command to be executed
+    {create,sign,mender}  command to be executed
       create              creates a SWU file
       sign                signs an existing SWU file provided by -i
+      mender              wraps an existing SWU file provided by -i into a Mender Artifact
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -65,6 +66,32 @@ It maybe run in two steps to create an unsigned swu file and then sign it later 
 
     swugenerator -o output.swu -a . -s sw-description.in create
     swugenerator -o signed_output.swu -i output.swu -k CMS,key.pem,ca.crt sign
+
+Mender Artifact
+---------------
+
+A Mender Server delivers updates only as Mender Artifacts. The ``mender`` command puts
+an existing SWU, unchanged and with its signature, into a Mender Artifact (format
+version 3) as the payload of type ``swu``, as
+``mender-artifact write module-image -T swu`` does. SWUpdate's Mender Suricatta module
+takes the SWU out of the artifact while it is downloaded::
+
+    swugenerator -o update.mender mender -i signed_output.swu -D board-a -D board-b -N release-2
+
+Options of the ``mender`` command::
+
+  -i, --swu-in-file SWU_IN_FILE
+                        SWU to wrap
+  -D, --device-type DEVICE_TYPE
+                        compatible device type, can be repeated
+  -N, --artifact-name ARTIFACT_NAME
+                        artifact name, default: version in sw-description
+  -T, --payload-type PAYLOAD_TYPE
+                        payload type, default: swu
+  -C, --compression {gzip,xz,none}
+                        compression of header and payload, default: gzip
+
+The artifact is reproducible with ``SOURCE_DATE_EPOCH``.
 
 
 Installation

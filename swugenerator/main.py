@@ -15,7 +15,7 @@ from typing import List, Optional, Tuple, Union
 
 import libconf
 
-from swugenerator import __about__, generator, signer
+from swugenerator import __about__, generator, mender, signer
 
 from swugenerator.swu_sign import SWUSignCMS, SWUSignCustom, SWUSignPKCS11, SWUSignRSA
 
@@ -229,6 +229,27 @@ def sign_swu(args: argparse.Namespace) -> None:
         swu.abort()
         raise
 
+def mender_swu(args: argparse.Namespace) -> None:
+    """Wraps an existing SWU into a Mender Artifact
+
+    Args:
+        args (argparse.Namespace): Parsed arguments
+    """
+    swu = mender.SWUMender(
+        args.swu_in_file,
+        args.swu_file,
+        args.device_type,
+        args.artifact_name,
+        args.payload_type,
+        args.compression,
+    )
+    try:
+        swu.process()
+        swu.close()
+    except BaseException:
+        swu.abort()
+        raise
+
 def parse_args(args: List[str]) -> None:
     """Sets up arguments for swugenerator and parses commandline args
 
@@ -387,6 +408,44 @@ def parse_args(args: List[str]) -> None:
         required=True,
         type=Path,
         help="SWU input file to be signed, required for the sign command",
+    )
+    mender_subparser = subparsers.add_parser(
+        "mender",
+        help="wraps an existing SWU file provided by -i into a Mender Artifact",
+    )
+    mender_subparser.set_defaults(func=mender_swu)
+    mender_subparser.add_argument(
+        "-i",
+        "--swu-in-file",
+        required=True,
+        type=Path,
+        help="SWU to wrap",
+    )
+    mender_subparser.add_argument(
+        "-D",
+        "--device-type",
+        action="append",
+        required=True,
+        help="compatible device type, can be repeated",
+    )
+    mender_subparser.add_argument(
+        "-N",
+        "--artifact-name",
+        default=None,
+        help="artifact name, default: version in sw-description",
+    )
+    mender_subparser.add_argument(
+        "-T",
+        "--payload-type",
+        default="swu",
+        help="payload type, default: swu",
+    )
+    mender_subparser.add_argument(
+        "-C",
+        "--compression",
+        choices=list(mender.COMPRESSION),
+        default="gzip",
+        help="compression of header and payload, default: gzip",
     )
     args = parser.parse_args(args)
     if args.sign:
