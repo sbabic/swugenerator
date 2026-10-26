@@ -354,6 +354,11 @@ INVALID_COMMANDS = [
     (["-o", "test.mender", "mender", "-D", "board"]),
     (["-o", "test.mender", "mender", "-i", "in.swu", "-D", "board", "-C", "zstd"]),
     (["mender", "-i", "in.swu", "-D", "board"]),
+    (["-k", "CUSTOM,foo", "-o", "test.mender", "mender", "-i", "in.swu", "-D", "board"]),
+    (["-K", "key.txt", "-o", "test.mender", "mender", "-i", "in.swu", "-D", "board"]),
+    (["-t", "-o", "test.mender", "mender", "-i", "in.swu", "-D", "board"]),
+    (["-o", "test.mender", "mender", "-i", "in.swu", "-D", "board", "-T", ""]),
+    (["-o", "test.mender", "mender", "-i", "in.swu", "-D", "board", "-T", "my swu"]),
 ]
 
 

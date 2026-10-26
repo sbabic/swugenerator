@@ -183,6 +183,17 @@ def set_log_level(arg: str) -> str:
     return arg
 
 
+def payload_type(arg: str) -> str:
+    """Checks the payload type of a Mender Artifact
+
+    Raises:
+        argparse.ArgumentTypeError: if it is empty or has spaces
+    """
+    if not arg or any(c.isspace() for c in arg):
+        raise argparse.ArgumentTypeError("must be a name without spaces")
+    return arg
+
+
 def create_swu(args: argparse.Namespace) -> None:
     """Creates SWU archive from arguments passed to SWUGenerate
 
@@ -438,6 +449,7 @@ def parse_args(args: List[str]) -> None:
         "-T",
         "--payload-type",
         default="swu",
+        type=payload_type,
         help="payload type, default: swu",
     )
     mender_subparser.add_argument(
@@ -454,6 +466,14 @@ def parse_args(args: List[str]) -> None:
     if args.func is create_swu and not args.sw_description:
         parser.error(
             "the following arguments are required: -s/--sw-description"
+        )
+    # the SWU is wrapped as it is: nothing is signed or encrypted
+    if args.func is mender_swu and (
+        args.sign or args.encryption_key_file != (None, None) or args.encrypt_swdesc
+    ):
+        parser.error(
+            "-k/--sign, -K/--encryption-key-file and -t/--encrypt-swdesc cannot be "
+            "used with mender: sign the SWU before it is wrapped"
         )
     if args.func is sign_swu and not args.sign:
         parser.error(
