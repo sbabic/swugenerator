@@ -117,7 +117,7 @@ def parse_signing_option(
     sign_parms = sign_arg.split(",")
     cmd = sign_parms[0]
     if cmd == "CMS":
-        if len(sign_parms) not in (3, 4, 5) or not all(sign_parms[0:2]):
+        if len(sign_parms) not in (3, 4, 5) or not all(sign_parms[1:3]):
             raise InvalidSigningOption(
                 "CMS requires private key, certificate, an optional password file and an optional file with additional certificates"
             )

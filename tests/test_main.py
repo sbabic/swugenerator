@@ -129,6 +129,8 @@ INVALID_SIGNING_TEST_PARAMETERS = [
         "CMS,,foo,",
         "CMS requires private key, certificate, an optional password file and an optional file with additional certificates",
     ),
+    ("CMS,foo,", "CMS requires private key, certificate, an optional password file and an optional file with additional certificates"),
+    ("CMS,foo,,baz", "CMS requires private key, certificate, an optional password file and an optional file with additional certificates"),
     ("CMS,foo", "CMS requires private key, certificate, an optional password file and an optional file with additional certificates"),
     (
         "CMS,foo,bar,baz,qux,jaz",
