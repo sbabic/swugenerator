@@ -2,6 +2,7 @@
 import hashlib
 import io
 import json
+import os
 import tarfile
 from pathlib import Path
 
@@ -91,12 +92,35 @@ def test_payload_type(tmp_path):
     assert json.loads(header["headers/0000/type-info"]) == {"type": "swupdate"}
 
 
+def artifact(swu: bytes, compression: str) -> bytes:
+    out = io.BytesIO()
+    mender.write_artifact(out, io.BytesIO(swu), "r", ["board"], compression=compression)
+    return out.getvalue()
+
+
 def test_reproducible(monkeypatch):
     monkeypatch.setenv("SOURCE_DATE_EPOCH", "1700000000")
     swu = SWUS[0].read_bytes()
     for compression in mender.COMPRESSION:
-        first = mender.make_artifact(swu, "r", ["board"], compression=compression)
-        assert first == mender.make_artifact(swu, "r", ["board"], compression=compression)
+        assert artifact(swu, compression) == artifact(swu, compression)
+
+
+class ChunkReader(io.BytesIO):
+    """Fails if more than a chunk is read at once"""
+
+    def read(self, size=-1):
+        assert 0 <= size <= 1 << 20
+        return super().read(size)
+
+
+@pytest.mark.parametrize("compression", list(mender.COMPRESSION))
+def test_streamed(tmp_path, compression):
+    swu = SWUS[0].read_bytes() + os.urandom(3 << 20)
+    out = io.BytesIO()
+    mender.write_artifact(out, ChunkReader(swu), "r", ["board"], compression=compression,
+                          tmp_dir=tmp_path)
+    check_artifact(out.getvalue(), swu, compression)
+    assert not list(tmp_path.iterdir())
 
 
 def cpio(name: bytes, data: bytes) -> bytes:

@@ -12,6 +12,7 @@ Mender Suricatta module takes the SWU out of the artifact while it is
 downloaded; the SWU keeps its own signature, the artifact is not signed.
 """
 
+import contextlib
 import gzip
 import hashlib
 import io
@@ -21,9 +22,10 @@ import lzma
 import os
 import re
 import tarfile
+import tempfile
 import time
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import BinaryIO, List, Optional, Tuple
 
 CPIO_MAGIC = (b"070701", b"070702")
 COMPRESSION = {"gzip": ".gz", "xz": ".xz", "none": ""}
@@ -42,36 +44,68 @@ def _compress(data: bytes, method: str) -> bytes:
     return data
 
 
+def _compressed(fileobj: BinaryIO, method: str):
+    """Writable stream compressing into fileobj, which is left open"""
+    if method == "gzip":
+        # no file name and no time stamp in the gzip header
+        return gzip.GzipFile(
+            filename="", mode="wb", fileobj=fileobj, compresslevel=6, mtime=0
+        )
+    if method == "xz":
+        return lzma.LZMAFile(fileobj, "wb", preset=6)
+    return contextlib.nullcontext(fileobj)
+
+
+class _HashingReader:
+    """Reads from a stream and computes the sha256 of what is read"""
+
+    def __init__(self, fileobj: BinaryIO):
+        self.fileobj = fileobj
+        self.sha256 = hashlib.sha256()
+
+    def read(self, size: int = -1) -> bytes:
+        data = self.fileobj.read(size)
+        self.sha256.update(data)
+        return data
+
+
+def _write_tar(
+    fileobj: BinaryIO, files: List[Tuple[str, int, BinaryIO]], mtime: int
+) -> None:
+    """ustar archive of (name, size, stream) entries, in this order"""
+    with tarfile.open(fileobj=fileobj, mode="w", format=tarfile.USTAR_FORMAT) as tar:
+        for name, size, data in files:
+            info = tarfile.TarInfo(name)
+            info.size = size
+            info.mode = 0o644
+            info.mtime = mtime
+            tar.addfile(info, data)
+
+
 def _tar(files: List[Tuple[str, bytes]], mtime: int) -> bytes:
     """ustar archive of (name, data) entries, in this order"""
     bio = io.BytesIO()
-    with tarfile.open(fileobj=bio, mode="w", format=tarfile.USTAR_FORMAT) as tar:
-        for name, data in files:
-            info = tarfile.TarInfo(name)
-            info.size = len(data)
-            info.mode = 0o644
-            info.mtime = mtime
-            tar.addfile(info, io.BytesIO(data))
+    _write_tar(bio, [(name, len(data), io.BytesIO(data)) for name, data in files], mtime)
     return bio.getvalue()
 
 
-def read_swu_head(swu: bytes) -> Tuple[str, bytes]:
+def read_swu_head(swu: BinaryIO) -> Tuple[str, bytes]:
     """Name and content of the first entry of a SWU (newc or crc cpio)
 
     Raises:
         InvalidSWU: if the data does not start with a cpio header
     """
-    if len(swu) < 110 or swu[:6] not in CPIO_MAGIC:
+    header = swu.read(110)
+    if len(header) < 110 or header[:6] not in CPIO_MAGIC:
         raise InvalidSWU("not a SWU (no cpio header)")
     try:
-        filesize = int(swu[54:62], 16)
-        namesize = int(swu[94:102], 16)
+        filesize = int(header[54:62], 16)
+        namesize = int(header[94:102], 16)
     except ValueError as error:
         raise InvalidSWU("invalid cpio header") from error
-    name = swu[110 : 110 + namesize].rstrip(b"\0").decode(errors="replace")
-    start = 110 + namesize
-    start += (4 - start % 4) % 4
-    return name, swu[start : start + filesize]
+    name = swu.read(namesize).rstrip(b"\0").decode(errors="replace")
+    swu.read((4 - (110 + namesize) % 4) % 4)
+    return name, swu.read(filesize)
 
 
 def swu_version(sw_description: bytes) -> Optional[str]:
@@ -80,26 +114,30 @@ def swu_version(sw_description: bytes) -> Optional[str]:
     return match.group(1).decode() if match else None
 
 
-def make_artifact(
-    swu: bytes,
+def write_artifact(
+    out: BinaryIO,
+    swu: BinaryIO,
     name: str,
     device_types: List[str],
     payload_type: str = "swu",
     compression: str = "gzip",
     mtime: Optional[int] = None,
-) -> bytes:
-    """Mender Artifact (version 3) with the SWU as its payload
+    tmp_dir: Optional[Path] = None,
+) -> None:
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
+    """Writes a Mender Artifact (version 3) with the SWU as its payload
+
+    The SWU is streamed: it is read once, and never held in memory.
 
     Args:
-        swu (bytes): the SWU
+        out (BinaryIO): where the artifact is written
+        swu (BinaryIO): the SWU, read from its current position to the end
         name (str): artifact name
         device_types (List[str]): compatible device types
         payload_type (str): payload type, "swu" for SWUpdate
         compression (str): "gzip", "xz" or "none" for header and payload
         mtime (int): time stamp of the entries, default SOURCE_DATE_EPOCH or now
-
-    Returns:
-        bytes: the artifact
+        tmp_dir (Path): directory for the compressed payload, default the system one
     """
     if mtime is None:
         mtime = int(os.environ.get("SOURCE_DATE_EPOCH", time.time()))
@@ -125,29 +163,41 @@ def make_artifact(
         ),
         compression,
     )
-    data = _compress(_tar([(PAYLOAD_NAME, swu)], mtime), compression)
+    start = swu.tell()
+    swu_size = swu.seek(0, os.SEEK_END) - start
+    swu.seek(start)
 
-    # as written by sha256sum
-    manifest = "".join(
-        f"{hashlib.sha256(content).hexdigest()}  {fname}\n"
-        for fname, content in sorted(
+    # the outer tar needs the size of the compressed payload before it,
+    # so the payload is compressed into a temporary file first
+    with tempfile.TemporaryFile(dir=tmp_dir) as data:
+        reader = _HashingReader(swu)
+        with _compressed(data, compression) as stream:
+            _write_tar(stream, [(PAYLOAD_NAME, swu_size, reader)], mtime)
+        data_size = data.tell()
+        data.seek(0)
+
+        # as written by sha256sum
+        manifest = "".join(
+            f"{digest}  {fname}\n"
+            for fname, digest in sorted(
+                [
+                    ("version", hashlib.sha256(version).hexdigest()),
+                    (header_name, hashlib.sha256(header).hexdigest()),
+                    ("data/0000/" + PAYLOAD_NAME, reader.sha256.hexdigest()),
+                ]
+            )
+        ).encode()
+
+        _write_tar(
+            out,
             [
-                ("version", version),
-                (header_name, header),
-                ("data/0000/" + PAYLOAD_NAME, swu),
-            ]
+                ("version", len(version), io.BytesIO(version)),
+                ("manifest", len(manifest), io.BytesIO(manifest)),
+                (header_name, len(header), io.BytesIO(header)),
+                ("data/0000.tar" + suffix, data_size, data),
+            ],
+            mtime,
         )
-    ).encode()
-
-    return _tar(
-        [
-            ("version", version),
-            ("manifest", manifest),
-            (header_name, header),
-            ("data/0000.tar" + suffix, data),
-        ],
-        mtime,
-    )
 
 
 class SWUMender:
@@ -177,25 +227,29 @@ class SWUMender:
         Raises:
             InvalidSWU: if the input is not a SWU, or no name can be found
         """
-        swu = self.in_file.read_bytes()
-        first, sw_description = read_swu_head(swu)
-        if first != "sw-description":
-            raise InvalidSWU(f"the first file is {first}, not sw-description")
-        name = self.name or swu_version(sw_description)
-        if not name:
-            raise InvalidSWU("no version in sw-description, the artifact name is needed")
-        if any(c.isspace() for c in name):
-            raise InvalidSWU("the artifact name must not contain spaces")
-        artifact = make_artifact(
-            swu, name, self.device_types, self.payload_type, self.compression
-        )
-        self.tmp_file.write_bytes(artifact)
+        with open(self.in_file, "rb") as swu:
+            first, sw_description = read_swu_head(swu)
+            if first != "sw-description":
+                raise InvalidSWU(f"the first file is {first}, not sw-description")
+            name = self.name or swu_version(sw_description)
+            if not name:
+                raise InvalidSWU(
+                    "no version in sw-description, the artifact name is needed"
+                )
+            if any(c.isspace() for c in name):
+                raise InvalidSWU("the artifact name must not contain spaces")
+            swu.seek(0)
+            with open(self.tmp_file, "wb") as out:
+                write_artifact(
+                    out, swu, name, self.device_types, self.payload_type,
+                    self.compression, tmp_dir=self.out_file.parent,
+                )
         logging.info(
             "%s: artifact %s for %s, %d bytes",
             self.out_file,
             name,
             ", ".join(self.device_types),
-            len(artifact),
+            self.tmp_file.stat().st_size,
         )
 
     def close(self) -> None:
