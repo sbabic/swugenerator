@@ -203,3 +203,22 @@ def test_big_payload():
     # small entries are plain ustar
     small = mender._tarinfo(mender.PAYLOAD_NAME, 1 << 30, 0)  # pylint: disable=protected-access
     assert len(small.tobuf(mender.TAR_FORMAT)) == tarfile.BLOCKSIZE
+
+
+@pytest.mark.parametrize(
+    "value,expected", [("1700000000", 1700000000), (" 42\n", 42), ("", None), (None, None)]
+)
+def test_source_date_epoch(monkeypatch, value, expected):
+    if value is None:
+        monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
+    else:
+        monkeypatch.setenv("SOURCE_DATE_EPOCH", value)
+    monkeypatch.setattr(mender.time, "time", lambda: 1234.5)
+    assert mender.source_date_epoch() == (1234 if expected is None else expected)
+
+
+@pytest.mark.parametrize("value", ["1700000000.0", "-1", "yesterday", "\u00b2"])
+def test_invalid_source_date_epoch(monkeypatch, value):
+    monkeypatch.setenv("SOURCE_DATE_EPOCH", value)
+    with pytest.raises(ValueError, match="SOURCE_DATE_EPOCH"):
+        mender.source_date_epoch()

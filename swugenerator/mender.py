@@ -145,6 +145,24 @@ def swu_version(sw_description: bytes) -> Optional[str]:
     return version if isinstance(version, str) and version else None
 
 
+def source_date_epoch() -> int:
+    """SOURCE_DATE_EPOCH if set, else now
+
+    Raises:
+        ValueError: if SOURCE_DATE_EPOCH is not a time stamp
+    """
+    value = os.environ.get("SOURCE_DATE_EPOCH", "").strip()
+    if not value:
+        return int(time.time())
+    try:
+        epoch = int(value)
+    except ValueError:
+        epoch = -1
+    if epoch < 0:
+        raise ValueError(f"SOURCE_DATE_EPOCH must be a number of seconds, not {value!r}")
+    return epoch
+
+
 def write_artifact(
     out: BinaryIO,
     swu: BinaryIO,
@@ -171,7 +189,7 @@ def write_artifact(
         tmp_dir (Path): directory for the compressed payload, default the system one
     """
     if mtime is None:
-        mtime = int(os.environ.get("SOURCE_DATE_EPOCH", time.time()))
+        mtime = source_date_epoch()
     suffix = COMPRESSION[compression]
 
     version = json.dumps({"format": "mender", "version": 3}).encode()
