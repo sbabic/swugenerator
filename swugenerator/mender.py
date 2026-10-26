@@ -20,12 +20,13 @@ import json
 import logging
 import lzma
 import os
-import re
 import tarfile
 import tempfile
 import time
 from pathlib import Path
 from typing import BinaryIO, List, Optional, Tuple
+
+import libconf
 
 CPIO_MAGIC = (b"070701", b"070702")
 COMPRESSION = {"gzip": ".gz", "xz": ".xz", "none": ""}
@@ -123,9 +124,25 @@ def read_swu_head(swu: BinaryIO) -> Tuple[str, bytes]:
 
 
 def swu_version(sw_description: bytes) -> Optional[str]:
-    """version of the software in sw-description (libconfig or JSON)"""
-    match = re.search(rb'(?m)^\s*"?version"?\s*[=:]\s*"([^"]+)"', sw_description)
-    return match.group(1).decode() if match else None
+    """version in the software block of sw-description (libconfig or JSON)
+
+    Returns None if there is none, or if sw-description cannot be parsed,
+    for example because it is encrypted.
+    """
+    try:
+        text = sw_description.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+    try:
+        conf = json.loads(text)
+    except ValueError:
+        try:
+            conf = libconf.loads(text)
+        except (libconf.ConfigParseError, ValueError):
+            return None
+    software = conf.get("software") if isinstance(conf, dict) else None
+    version = software.get("version") if isinstance(software, dict) else None
+    return version if isinstance(version, str) and version else None
 
 
 def write_artifact(
@@ -248,7 +265,8 @@ class SWUMender:
             name = self.name or swu_version(sw_description)
             if not name:
                 raise InvalidSWU(
-                    "no version in sw-description, the artifact name is needed"
+                    "no version in sw-description (or it is encrypted), "
+                    "the artifact name is needed"
                 )
             if any(c.isspace() for c in name):
                 raise InvalidSWU("the artifact name must not contain spaces")

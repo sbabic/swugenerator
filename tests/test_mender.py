@@ -178,6 +178,17 @@ def test_name_with_spaces(tmp_path):
         (b'software =\n{\n\tversion = "2.1.0";\n};\n', "2.1.0"),
         (b'{\n  "software": {\n    "version": "3.0"\n  }\n}\n', "3.0"),
         (b'software = { description = "no version"; };', None),
+        # nested versions are not the version of the software
+        (b'software =\n{\n\timages: ( {\n\t\tversion = "0.3";\n\t} );\n'
+         b'\tversion = "2.1.0";\n};\n', "2.1.0"),
+        (b'software = { images: ( { version = "0.3"; } ); };', None),
+        (b'software = { version = "1.0"; images: ( { filename = "a"; } ); };', "1.0"),
+        (b'{ "software": { "images": [ { "version": "0.3" } ], "version": "4.0" } }',
+         "4.0"),
+        (b'version = "1.0";', None),
+        (b'software = { version = 1; };', None),
+        (b"\x8f\x02\xa1 encrypted", None),
+        (b"software = { version = ", None),
     ],
 )
 def test_swu_version(sw_description, version):
