@@ -185,27 +185,35 @@ class SWUFile:
     def _extract_file(self, outdir, name):
         c_mode = int(self.header[14:22], 16)
         c_filesize = int(self.header[54:62], 16)
-        # Read file data
-        filedata = self.file.read(c_filesize)
-        pad = (4 - c_filesize % 4) % 4
-        self.file.read(pad)
         # Compute output path, it must not escape from outdir
         root = os.path.realpath(outdir)
         path = os.path.realpath(os.path.join(root, name))
         if path == root or os.path.commonpath([root, path]) != root:
             raise FormatException(f"Invalid file name in archive: {name}")
+        # a SWU contains only regular files
+        if not stat.S_ISREG(c_mode):
+            raise FormatException(f"{name} is not a regular file")
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        # check if its really a file
-        if c_mode & 0o170000 != 0o040000:
-            with open(path, "wb") as out:
-                out.write(filedata)
-            try:
-                # preserve mode
-                os.chmod(path, c_mode & 0o7777)
-            except OSError:
-                pass
+        # copy in chunks, images can be bigger than the memory
+        outcrc = 0
+        size = c_filesize
+        with open(path, "wb") as out:
+            while size:
+                chunk = self.file.read(min(size, 65536))
+                if not chunk:
+                    raise FormatException(f"{name} is truncated")
+                out.write(chunk)
+                outcrc += sum(chunk)
+                size -= len(chunk)
+        outcrc &= 0xFFFFFFFF
+        try:
+            # preserve mode
+            os.chmod(path, c_mode & 0o7777)
+        except OSError:
+            pass
+        pad = (4 - c_filesize % 4) % 4
+        self.file.read(pad)
         # check CRC
-        outcrc = self.cpiocrc(path)
         incrc = int(self.header[102:110], 16)
         if outcrc !=  incrc:
             raise FormatException(

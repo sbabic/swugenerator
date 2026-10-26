@@ -59,3 +59,41 @@ def test_write_header_64bit_inode(next_artifact, monkeypatch):
     header = virtual_cpio.getvalue()
     inode0 = header[6:14]
     assert inode0 == b"00000001"
+
+
+def make_swu(tmp_path, files):
+    """SWU with the files (name, content), returns its content"""
+    out = io.BytesIO()
+    cpio = swu_file.SWUFile(out)
+    for name, content in files:
+        path = tmp_path / name
+        path.write_bytes(content)
+        cpio.addartifacttoswu(str(path))
+    cpio.add_trailer()
+    return out.getvalue()
+
+
+def test_extract(tmp_path):
+    # bigger than a chunk, size not aligned
+    files = [("sw-description", b"software = {};"), ("image.bin", os.urandom(200001))]
+    swu = make_swu(tmp_path, files)
+    outdir = tmp_path / "out"
+
+    assert swu_file.SWUFile(io.BytesIO(swu)).extract(outdir) == [n for n, _ in files]
+    for name, content in files:
+        assert (outdir / name).read_bytes() == content
+
+
+def test_extract_truncated(tmp_path):
+    swu = make_swu(tmp_path, [("image.bin", os.urandom(200001))])
+
+    with pytest.raises(swu_file.FormatException, match="truncated"):
+        swu_file.SWUFile(io.BytesIO(swu[:100000])).extract(tmp_path / "out")
+
+
+def test_extract_wrong_crc(tmp_path):
+    swu = bytearray(make_swu(tmp_path, [("image.bin", b"0123456789")]))
+    swu[swu.index(b"0123456789")] ^= 1
+
+    with pytest.raises(swu_file.FormatException, match="crc"):
+        swu_file.SWUFile(io.BytesIO(bytes(swu))).extract(tmp_path / "out")
