@@ -373,4 +373,4 @@ class SWUGenerator:
         a = Artifact(filename)
         if a.findfile(self.artifactory):
             return str(a.getsize())
-        return "0"
+        return None
