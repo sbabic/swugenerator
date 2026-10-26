@@ -112,6 +112,12 @@ class SWUGenerator:
     def process_entry(self, entry):
         if "filename" not in entry:
             return
+        # the SWU is flat, a filename cannot have a directory
+        if os.path.basename(entry["filename"]) != entry["filename"]:
+            logging.critical(
+                "Invalid filename %s: no directory is allowed", entry["filename"]
+            )
+            sys.exit(1)
         processing = self._processing(entry)
         new = None
         for image in self.artifacts:
