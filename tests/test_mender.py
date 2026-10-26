@@ -169,3 +169,13 @@ def test_name_with_spaces(tmp_path):
 )
 def test_swu_version(sw_description, version):
     assert mender.swu_version(sw_description) == version
+
+
+def test_big_payload():
+    # a ustar header cannot hold a size of 8 GB or more
+    big = mender._tarinfo(mender.PAYLOAD_NAME, 9 << 30, 0)  # pylint: disable=protected-access
+    header = big.tobuf(mender.TAR_FORMAT)
+    assert b"size=%d\n" % (9 << 30) in header
+    # small entries are plain ustar
+    small = mender._tarinfo(mender.PAYLOAD_NAME, 1 << 30, 0)  # pylint: disable=protected-access
+    assert len(small.tobuf(mender.TAR_FORMAT)) == tarfile.BLOCKSIZE

@@ -30,6 +30,8 @@ from typing import BinaryIO, List, Optional, Tuple
 CPIO_MAGIC = (b"070701", b"070702")
 COMPRESSION = {"gzip": ".gz", "xz": ".xz", "none": ""}
 PAYLOAD_NAME = "update.swu"
+# ustar, with a pax header only for what does not fit, as a SWU of 8 GB
+TAR_FORMAT = tarfile.PAX_FORMAT
 
 
 class InvalidSWU(ValueError):
@@ -69,21 +71,25 @@ class _HashingReader:
         return data
 
 
+def _tarinfo(name: str, size: int, mtime: int) -> tarfile.TarInfo:
+    info = tarfile.TarInfo(name)
+    info.size = size
+    info.mode = 0o644
+    info.mtime = mtime
+    return info
+
+
 def _write_tar(
     fileobj: BinaryIO, files: List[Tuple[str, int, BinaryIO]], mtime: int
 ) -> None:
-    """ustar archive of (name, size, stream) entries, in this order"""
-    with tarfile.open(fileobj=fileobj, mode="w", format=tarfile.USTAR_FORMAT) as tar:
+    """tar archive of (name, size, stream) entries, in this order"""
+    with tarfile.open(fileobj=fileobj, mode="w", format=TAR_FORMAT) as tar:
         for name, size, data in files:
-            info = tarfile.TarInfo(name)
-            info.size = size
-            info.mode = 0o644
-            info.mtime = mtime
-            tar.addfile(info, data)
+            tar.addfile(_tarinfo(name, size, mtime), data)
 
 
 def _tar(files: List[Tuple[str, bytes]], mtime: int) -> bytes:
-    """ustar archive of (name, data) entries, in this order"""
+    """tar archive of (name, data) entries, in this order"""
     bio = io.BytesIO()
     _write_tar(bio, [(name, len(data), io.BytesIO(data)) for name, data in files], mtime)
     return bio.getvalue()
