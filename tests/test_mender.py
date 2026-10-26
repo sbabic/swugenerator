@@ -123,11 +123,13 @@ def test_streamed(tmp_path, compression):
     assert not list(tmp_path.iterdir())
 
 
-def cpio(name: bytes, data: bytes) -> bytes:
-    """newc cpio entry, enough for read_swu_head()"""
+def cpio(name: bytes, data: bytes, magic: bytes = b"070701", checksum=None) -> bytes:
+    """newc or crc cpio entry, enough for read_swu_head()"""
     namez = name + b"\0"
-    fields = [1, 0o100644, 0, 0, 1, 0, len(data), 0, 0, 0, 0, len(namez), 0]
-    hdr = b"070701" + b"".join(b"%08x" % v for v in fields) + namez
+    if checksum is None:
+        checksum = sum(data) if magic == b"070702" else 0
+    fields = [1, 0o100644, 0, 0, 1, 0, len(data), 0, 0, 0, 0, len(namez), checksum]
+    hdr = magic + b"".join(b"%08x" % v for v in fields) + namez
     hdr += b"\0" * ((4 - len(hdr) % 4) % 4)
     return hdr + data + b"\0" * ((4 - len(data) % 4) % 4)
 
@@ -139,6 +141,10 @@ def cpio(name: bytes, data: bytes) -> bytes:
         (cpio(b"rootfs.img", b"data"), "not sw-description"),
         (cpio(b"sw-description", b'software = { description = "x"; };'),
          "no version in sw-description"),
+        (cpio(b"sw-description", b'software = { version = "1.0"; };')[:140], "truncated"),
+        (cpio(b"sw-description", b'software = { version = "1.0"; };')[:115], "truncated"),
+        (cpio(b"sw-description", b'software = { version = "1.0"; };', b"070702", 1),
+         "wrong checksum"),
     ],
 )
 def test_invalid_input(tmp_path, content, error):
@@ -151,6 +157,13 @@ def test_invalid_input(tmp_path, content, error):
     wrapper.abort()
     assert not out.exists()
     assert not (tmp_path / "update.mender.tmp").exists()
+
+
+@pytest.mark.parametrize("magic", [b"070701", b"070702"])
+def test_read_swu_head(magic):
+    content = b'software = { version = "1.0"; };'
+    swu = io.BytesIO(cpio(b"sw-description", content, magic) + cpio(b"image", b"x"))
+    assert mender.read_swu_head(swu) == ("sw-description", content)
 
 
 def test_name_with_spaces(tmp_path):

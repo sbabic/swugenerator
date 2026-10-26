@@ -99,7 +99,7 @@ def read_swu_head(swu: BinaryIO) -> Tuple[str, bytes]:
     """Name and content of the first entry of a SWU (newc or crc cpio)
 
     Raises:
-        InvalidSWU: if the data does not start with a cpio header
+        InvalidSWU: if the data does not start with a complete cpio entry
     """
     header = swu.read(110)
     if len(header) < 110 or header[:6] not in CPIO_MAGIC:
@@ -107,11 +107,19 @@ def read_swu_head(swu: BinaryIO) -> Tuple[str, bytes]:
     try:
         filesize = int(header[54:62], 16)
         namesize = int(header[94:102], 16)
+        checksum = int(header[102:110], 16)
     except ValueError as error:
         raise InvalidSWU("invalid cpio header") from error
-    name = swu.read(namesize).rstrip(b"\0").decode(errors="replace")
+    name = swu.read(namesize)
     swu.read((4 - (110 + namesize) % 4) % 4)
-    return name, swu.read(filesize)
+    data = swu.read(filesize)
+    if len(name) < namesize or len(data) < filesize:
+        raise InvalidSWU("the SWU is truncated")
+    name = name.rstrip(b"\0").decode(errors="replace")
+    # 070702 has a checksum, 070701 has none
+    if header[:6] == b"070702" and sum(data) & 0xFFFFFFFF != checksum:
+        raise InvalidSWU(f"wrong checksum of {name}")
+    return name, data
 
 
 def swu_version(sw_description: bytes) -> Optional[str]:
