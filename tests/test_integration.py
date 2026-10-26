@@ -281,3 +281,22 @@ def test_with_encryption_flag_creates_encrypted_and_sign_swu(
     main.parse_args(command_args)
 
     assert validate_swu(output_directory / signed_output_file, encrypted=True)
+
+
+def test_sign_in_place(
+    artifactory, sw_description_template, config_file,
+    signing_key, output_directory
+):
+    swu = (output_directory / "signed_output.swu").resolve()
+    main.parse_args([
+        "-s", str(sw_description_template),
+        "-a", str(artifactory),
+        "-c", str(config_file),
+        "-o", str(swu),
+        "create",
+    ])
+    # the input is read while the output is written
+    main.parse_args(["-o", str(swu), "-k", f"RSA,{signing_key}", "sign", "-i", str(swu)])
+
+    assert validate_swu(swu)
+    assert not swu.with_name(swu.name + ".tmp").exists()

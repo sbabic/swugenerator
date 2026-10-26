@@ -11,10 +11,14 @@ from swugenerator.swu_file import SWUFile
 class SWUSigner:
     def __init__(self, in_file, out_file, crypt):
         self.signtool = crypt
-        self.fout = open(out_file, "wb")
-        self.cpio_out = SWUFile(self.fout)
+        self.out_file = Path(out_file)
         self.fin = open(in_file, "rb")
         self.cpio_in = SWUFile(self.fin)
+        # the output can be the input itself: write it aside and
+        # move it in place only when it is complete
+        self.tmp_file = self.out_file.with_name(self.out_file.name + ".tmp")
+        self.fout = open(self.tmp_file, "wb")
+        self.cpio_out = SWUFile(self.fout)
         self.temp = TemporaryDirectory()
 
     def close(self):
@@ -22,14 +26,15 @@ class SWUSigner:
         self.fin.close()
         self.cpio_out.add_trailer()
         self.fout.close()
+        os.replace(self.tmp_file, self.out_file)
 
     def abort(self):
         # do not leave an incomplete SWU behind
         self.temp.cleanup()
         self.fin.close()
         self.fout.close()
-        if os.path.exists(self.fout.name):
-            os.remove(self.fout.name)
+        if self.tmp_file.exists():
+            self.tmp_file.unlink()
 
     def process(self):
         # extract the swu file and get the file list
