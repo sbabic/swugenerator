@@ -1,6 +1,7 @@
 # Copyright (C) 2022 Stefano Babic
 #
 # SPDX-License-Identifier: GPLv3
+import json
 import logging
 import os
 import re
@@ -33,7 +34,7 @@ class SWUGenerator:
         no_compress=False,
         no_encrypt=False,
         no_ivt=False,
-        no_hash=False
+        no_hash=False,
     ):
         self.swdescription = template
         self.artifacts = []
@@ -53,6 +54,7 @@ class SWUGenerator:
         self.noencrypt = no_encrypt
         self.noivt = no_ivt
         self.nohash = no_hash
+        self.is_json = False
 
     @staticmethod
     def generate_iv():
@@ -244,11 +246,13 @@ class SWUGenerator:
 
     def find_files_in_swdesc(self, first):
         for n, val in first.items():
-            if isinstance(val, libconf.AttrDict):
+            # libconfig groups and JSON objects, libconfig lists and JSON arrays
+            if isinstance(val, dict):
                 self.find_files_in_swdesc(val)
-            elif isinstance(val, tuple):
+            elif isinstance(val, (tuple, list)):
                 for t in val:
-                    self.find_files_in_swdesc(t)
+                    if isinstance(t, dict):
+                        self.find_files_in_swdesc(t)
             else:
                 logging.debug("%s = %s", n, val)
                 if n == "filename":
@@ -266,8 +270,20 @@ class SWUGenerator:
         swdesc = ""
         for line in self.lines:
             swdesc = swdesc + line
-        self.conf = libconf.loads(swdesc)
-        self.find_files_in_swdesc(self.conf.software)
+        # sw-description in JSON starts with an object, libconfig cannot
+        self.is_json = swdesc.lstrip().startswith("{")
+        if self.is_json:
+            try:
+                self.conf = json.loads(swdesc)
+            except json.JSONDecodeError as error:
+                logging.critical("sw-description is not valid JSON: %s", error)
+                sys.exit(1)
+        else:
+            self.conf = libconf.loads(swdesc)
+        if "software" not in self.conf:
+            logging.critical("sw-description has no software block")
+            sys.exit(1)
+        self.find_files_in_swdesc(self.conf["software"])
 
         sw = Artifact("sw-description")
         sw.fullfilename = os.path.join(self.temp.name, sw.filename)
@@ -280,14 +296,17 @@ class SWUGenerator:
         for entry in self.filelist:
             self.process_entry(entry)
 
-        swdesc = libconf.dumps(self.conf)
+        if self.is_json:
+            swdesc = json.dumps(self.conf, indent=4) + "\n"
+        else:
+            swdesc = libconf.dumps(self.conf)
 
-        # libconf mishandle special character if they are part
-        # of an attribute. This happens to the embedded-script
-        # and the script results to be in just one line.
-        # Reinsert \n and \t that was removed by libconf
-        swdesc = re.sub(r"\\n", "\n", swdesc)
-        swdesc = re.sub(r"\\t", "\t", swdesc)
+            # libconf mishandle special character if they are part
+            # of an attribute. This happens to the embedded-script
+            # and the script results to be in just one line.
+            # Reinsert \n and \t that was removed by libconf
+            swdesc = re.sub(r"\\n", "\n", swdesc)
+            swdesc = re.sub(r"\\t", "\t", swdesc)
 
         swdesc_filename = os.path.join(self.temp.name, sw.filename)
         self.save_swdescription(swdesc_filename, swdesc)

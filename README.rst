@@ -54,7 +54,8 @@ This tool requires *openssl* to run and to sign the SWU. It is goal of the tool 
 the gap with Yocto/OE, where SWU generation is done by classes in the meta-swupdate layer,
 but other buildsystems like Debian or Buildroot have no tools to create a SWU.
 
-The tool signs the SWU and can encrypt the artifacts. The tool parses the libconf based sw-description (tool does not work for JSON based sw-description) and provides the following features:
+The tool signs the SWU and can encrypt the artifacts. The tool parses the sw-description,
+in libconfig or in JSON (a sw-description starting with ``{``), and provides the following features:
 
         - replace occurrencies of variables found in the CONFIG file
         - add sha256 to each artifact

@@ -1,5 +1,7 @@
 # pylint: disable=C0114,C0116,W0621
-"""Tests for CMS signing with several signers"""
+"""Tests for CMS signing with several signers and JSON sw-description"""
+import hashlib
+import json
 import shutil
 import subprocess
 
@@ -159,3 +161,34 @@ def test_cms_with_two_signers(workdir):
                     "-in", str(out / "sw-description.sig"),
                     "-content", str(out / "sw-description"), "-out", "/dev/null"],
                    check=True, capture_output=True)
+
+
+def test_json_sw_description(workdir):
+    template = {
+        "software": {
+            "version": "@@VERSION@@",
+            "images": [{"filename": "rootfs.img", "device": "/dev/null", "type": "raw",
+                        "size": "$swupdate_get_size(rootfs.img)"}],
+        }
+    }
+    (workdir / "sw-description").write_text(json.dumps(template, indent=2))
+    (workdir / "config").write_text('variables: { VERSION = "2.3"; };\n')
+    swu = workdir / "out.swu"
+    main.parse_args(["-a", str(workdir), "-s", str(workdir / "sw-description"),
+                     "-c", str(workdir / "config"), "-o", str(swu), "create"])
+    out = workdir / "extracted"
+    out.mkdir()
+    assert extract(swu, out) == ["sw-description", "rootfs.img"]
+    swdesc = json.loads((out / "sw-description").read_text())
+    image = swdesc["software"]["images"][0]
+    assert swdesc["software"]["version"] == "2.3"
+    assert image["sha256"] == hashlib.sha256(ARTIFACT).hexdigest()
+    assert image["size"] == str(len(ARTIFACT))
+
+
+def test_invalid_json_sw_description(workdir):
+    (workdir / "sw-description").write_text('{ "software": { "version": "1.0", }')
+    with pytest.raises(SystemExit):
+        main.parse_args(["-a", str(workdir), "-s", str(workdir / "sw-description"),
+                         "-o", str(workdir / "out.swu"), "create"])
+    assert not (workdir / "out.swu").exists()
