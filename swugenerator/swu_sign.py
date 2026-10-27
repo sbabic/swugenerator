@@ -46,6 +46,11 @@ class SWUSign:
 
 
 class SWUSignCMS(SWUSign):
+    """CMS signature, with one or more signers
+
+    openssl cms takes one password file and one digest for all signers.
+    """
+
     def __init__(self, key, cert, passin, certfile, engine=None, keyform=None,
                  provider=None, provider_path=None):
         super().__init__()
@@ -58,6 +63,35 @@ class SWUSignCMS(SWUSign):
         self.keyform = keyform
         self.provider = provider
         self.provider_path = provider_path
+        # further signers after (key, cert), and more intermediate certificates
+        self.signers = []
+        self.certfiles = []
+        self.md = None
+
+    def add_signer(self, key, cert, passin=None, certfile=None):
+        """Adds a signer: the signature has then one SignerInfo for each"""
+        if passin and passin != self.passin:
+            if self.passin:
+                raise ValueError("CMS signers must use the same password file")
+            self.passin = passin
+        self.signers.append((key, cert))
+        if certfile:
+            self.add_certfile(certfile)
+
+    def add_certfile(self, certfile):
+        """Adds a file with intermediate certificates"""
+        if certfile and certfile != self.certfile and certfile not in self.certfiles:
+            self.certfiles.append(certfile)
+
+    def set_md(self, md):
+        """Sets the message digest, otherwise the default of the keys"""
+        self.md = md
+
+    def get_certfile_args(self):
+        certfile_args = super().get_certfile_args()
+        for certfile in self.certfiles:
+            certfile_args += ["-certfile", certfile]
+        return certfile_args
 
     def prepare_cmd(self, sw_desc_in, sw_desc_sig):
         self.signcmd = [
@@ -79,9 +113,12 @@ class SWUSignCMS(SWUSign):
             self.signcmd += ["-engine", self.engine]
         if self.keyform:
             self.signcmd += ["-keyform", self.keyform]
+        self.signcmd += ["-inkey", self.key]
+        for key, cert in self.signers:
+            self.signcmd += ["-signer", cert, "-inkey", key]
+        if self.md:
+            self.signcmd += ["-md", self.md]
         self.signcmd += [
-            "-inkey",
-            self.key,
             "-outform",
             "DER",
             "-nosmimecap",

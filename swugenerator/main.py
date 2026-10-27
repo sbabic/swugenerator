@@ -163,6 +163,46 @@ def parse_signing_option(
     raise InvalidSigningOption("Unknown signing command")
 
 
+# pylint: disable=too-many-arguments,too-many-positional-arguments
+def parse_signing_options(
+    sign_args: List[str],
+    engine: str = None,
+    keyform: str = None,
+    provider: str = None,
+    provider_path: str = None,
+    cms_md: str = None,
+    cms_certfiles: List[str] = None,
+) -> Union[SWUSignCMS, SWUSignRSA, SWUSignPKCS11, SWUSignCustom]:
+    """Parses the -k options: several are allowed for CMS only
+
+    With several CMS options, the signature has a signer for each.
+
+    Raises:
+        InvalidSigningOption: if the options cannot be combined
+    """
+    signers = [
+        parse_signing_option(arg, engine, keyform, provider, provider_path)
+        for arg in sign_args
+    ]
+    sign = signers[0]
+    if len(signers) > 1:
+        if not all(isinstance(s, SWUSignCMS) for s in signers):
+            raise InvalidSigningOption("Only CMS can be given more than once")
+        for other in signers[1:]:
+            try:
+                sign.add_signer(other.key, other.cert, other.passin, other.certfile)
+            except ValueError as error:
+                raise InvalidSigningOption(str(error)) from error
+    if cms_md or cms_certfiles:
+        if not isinstance(sign, SWUSignCMS):
+            raise InvalidSigningOption("--cms-md and --cms-certfile need CMS signing")
+        if cms_md:
+            sign.set_md(cms_md)
+        for certfile in cms_certfiles or []:
+            sign.add_certfile(certfile)
+    return sign
+
+
 def set_log_level(arg: str) -> str:
     """Sets log level
 
@@ -317,6 +357,7 @@ def parse_args(args: List[str]) -> None:
     parser.add_argument(
         "-k",
         "--sign",
+        action="append",
         help=textwrap.dedent(
             """\
             RSA key or certificate to sign the SWU
@@ -328,8 +369,24 @@ def parse_args(args: List[str]) -> None:
                  --provider-path PATH      Path to OpenSSL provider modules
             RSA,<private key>,<file with password if any>
             PKCS11,<pin>[,<module>,<slot>,<id>]
-            CUSTOM,<custom command> """
+            CUSTOM,<custom command>
+            CMS can be given more than once, for a signature with several
+            signers; they must use the same password file."""
         ),
+    )
+
+    parser.add_argument(
+        "--cms-md",
+        default=None,
+        help="message digest for CMS signing (openssl cms -md), "
+        "default: the one of the keys",
+    )
+
+    parser.add_argument(
+        "--cms-certfile",
+        action="append",
+        default=[],
+        help="file with intermediate certificates for CMS signing, can be repeated",
     )
 
     parser.add_argument(
@@ -461,8 +518,14 @@ def parse_args(args: List[str]) -> None:
     )
     args = parser.parse_args(args)
     if args.sign:
-        args.sign = parse_signing_option(args.sign, args.engine, args.keyform,
-                                         args.provider, args.provider_path)
+        try:
+            args.sign = parse_signing_options(args.sign, args.engine, args.keyform,
+                                              args.provider, args.provider_path,
+                                              args.cms_md, args.cms_certfile)
+        except InvalidSigningOption as error:
+            parser.error(str(error))
+    elif args.cms_md or args.cms_certfile:
+        parser.error("--cms-md and --cms-certfile need -k/--sign with CMS")
     if args.func is create_swu and not args.sw_description:
         parser.error(
             "the following arguments are required: -s/--sw-description"

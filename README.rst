@@ -67,6 +67,20 @@ It maybe run in two steps to create an unsigned swu file and then sign it later 
     swugenerator -o output.swu -a . -s sw-description.in create
     swugenerator -o signed_output.swu -i output.swu -k CMS,key.pem,ca.crt sign
 
+CMS signing with several signers
+--------------------------------
+
+``-k CMS,...`` can be given more than once: the signature has then a signer for each,
+for example a classic and a post-quantum key. SWUpdate verifies all of them, so every
+certificate must be in its trust store. The signers must use the same password file::
+
+    swugenerator -o output.swu -a . -s sw-description.in \
+        -k CMS,rsa.key,rsa.crt -k CMS,mldsa.key,mldsa.crt --cms-md sha512 create
+
+``--cms-md`` sets the message digest of ``openssl cms`` (needed for keys without a
+default digest, such as ML-DSA; one digest is used for all signers), and
+``--cms-certfile`` adds a file with intermediate certificates (can be repeated).
+
 Mender Artifact
 ---------------
 
