@@ -35,6 +35,7 @@ class SWUGenerator:
         no_encrypt=False,
         no_ivt=False,
         no_hash=False,
+        extra_files=None,
     ):
         self.swdescription = template
         self.artifacts = []
@@ -54,6 +55,8 @@ class SWUGenerator:
         self.noencrypt = no_encrypt
         self.noivt = no_ivt
         self.nohash = no_hash
+        # files packed as they are, even if sw-description does not use them
+        self.extra_files = list(extra_files or [])
         self.is_json = False
 
     @staticmethod
@@ -258,6 +261,28 @@ class SWUGenerator:
                 if n == "filename":
                     self.filelist.append(first)
 
+    def add_extra_files(self):
+        """Packs the extra files as they are, after the artifacts"""
+        for name in self.extra_files:
+            if os.path.basename(name) != name:
+                logging.critical(
+                    "Invalid extra file %s: no directory is allowed", name
+                )
+                sys.exit(1)
+            if name in ("sw-description", "sw-description.sig"):
+                logging.critical("%s cannot be added as extra file", name)
+                sys.exit(1)
+            # already in the SWU, as an artifact of sw-description
+            if any(name in (a.filename, a.newfilename) for a in self.artifacts):
+                logging.debug("Extra file %s already in the SWU", name)
+                continue
+            extra = Artifact(name)
+            if not extra.findfile(self.artifactory):
+                logging.critical("Extra file %s not found", name)
+                sys.exit(22)
+            logging.debug("Extra file %s", name)
+            self.artifacts.append(extra)
+
     def save_swdescription(self, filename, contents):
         with open(filename, "w", encoding="utf-8") as swd:
             swd.write(contents)
@@ -295,6 +320,8 @@ class SWUGenerator:
 
         for entry in self.filelist:
             self.process_entry(entry)
+
+        self.add_extra_files()
 
         if self.is_json:
             swdesc = json.dumps(self.conf, indent=4) + "\n"

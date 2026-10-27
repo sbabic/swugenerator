@@ -1,5 +1,5 @@
 # pylint: disable=C0114,C0116,W0621
-"""Tests for CMS signing with several signers and JSON sw-description"""
+"""Tests for several CMS signers, JSON sw-description and extra files"""
 import hashlib
 import json
 import shutil
@@ -191,4 +191,27 @@ def test_invalid_json_sw_description(workdir):
     with pytest.raises(SystemExit):
         main.parse_args(["-a", str(workdir), "-s", str(workdir / "sw-description"),
                          "-o", str(workdir / "out.swu"), "create"])
+    assert not (workdir / "out.swu").exists()
+
+
+def test_extra_files(workdir):
+    (workdir / "sw-description").write_text(LIBCONFIG)
+    swu = workdir / "out.swu"
+    main.parse_args(["-a", str(workdir), "-s", str(workdir / "sw-description"),
+                     "-o", str(swu), "--add-file", "extra.txt",
+                     "--add-file", "rootfs.img", "create"])
+    out = workdir / "extracted"
+    out.mkdir()
+    # rootfs.img is not added twice, the extra file is packed as it is
+    assert extract(swu, out) == ["sw-description", "rootfs.img", "extra.txt"]
+    assert (out / "extra.txt").read_bytes() == b"not in sw-description\n"
+    assert "extra.txt" not in (out / "sw-description").read_text()
+
+
+@pytest.mark.parametrize("name", ["missing.txt", "sub/extra.txt", "sw-description"])
+def test_invalid_extra_files(workdir, name):
+    (workdir / "sw-description").write_text(LIBCONFIG)
+    with pytest.raises(SystemExit):
+        main.parse_args(["-a", str(workdir), "-s", str(workdir / "sw-description"),
+                         "-o", str(workdir / "out.swu"), "--add-file", name, "create"])
     assert not (workdir / "out.swu").exists()

@@ -82,6 +82,13 @@ certificate must be in its trust store. The signers must use the same password f
 default digest, such as ML-DSA; one digest is used for all signers), and
 ``--cms-certfile`` adds a file with intermediate certificates (can be repeated).
 
+Extra files
+-----------
+
+Only the files that sw-description uses are packed. ``--add-file <name>`` (can be
+repeated) adds a file found in the artifactory as it is, even if sw-description does
+not use it; a file already in the SWU is not added twice.
+
 Mender Artifact
 ---------------
 

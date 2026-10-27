@@ -259,6 +259,7 @@ def create_swu(args: argparse.Namespace) -> None:
         args.no_encrypt,
         args.no_ivt,
         args.no_hash,
+        args.add_file,
     )
     try:
         swu.process()
@@ -387,6 +388,14 @@ def parse_args(args: List[str]) -> None:
         action="append",
         default=[],
         help="file with intermediate certificates for CMS signing, can be repeated",
+    )
+
+    parser.add_argument(
+        "--add-file",
+        action="append",
+        default=[],
+        help="file searched in the artifactory and added to the SWU as it is, "
+        "even if sw-description does not use it, can be repeated",
     )
 
     parser.add_argument(
