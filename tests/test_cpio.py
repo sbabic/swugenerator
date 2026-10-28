@@ -97,3 +97,38 @@ def test_extract_wrong_crc(tmp_path):
 
     with pytest.raises(swu_file.FormatException, match="crc"):
         swu_file.SWUFile(io.BytesIO(bytes(swu))).extract(tmp_path / "out")
+
+
+def test_write_header_crc_format(next_artifact):
+    virtual_cpio = io.BytesIO()
+    swu_file.SWUFile(virtual_cpio).write_header(next_artifact())
+    header = virtual_cpio.getvalue()
+    assert header[0:6] == b"070702"
+    assert header[54:62] == b"00000004"
+
+
+def test_write_header_large_file(next_artifact, monkeypatch):
+    # 4 GiB and more: the upper 32 bits of the size go into c_rdev_maj
+    virtual_cpio = io.BytesIO()
+    virtual_swu_file = swu_file.SWUFile(virtual_cpio)
+    artifact0 = next_artifact()
+    monkeypatch.setattr(
+        os, "stat", lambda *_args, **_kwargs: StatResult(st_size=0x123456789)
+    )
+    virtual_swu_file.write_header(artifact0, crc=0)
+    header = virtual_cpio.getvalue()
+    assert header[0:6] == b"070704"
+    assert header[54:62] == b"23456789"
+    assert header[78:86] == b"00000001"
+
+
+def test_extract_large_format(tmp_path):
+    files = [("sw-description", b"software = {};"), ("image.bin", os.urandom(1001))]
+    swu = make_swu(tmp_path, files)
+    # the image as 070704 entry: same size, upper 32 bits are 0
+    pos = swu.index(b"070702", swu.index(b"sw-description") + 1)
+    swu = swu[:pos] + b"070704" + swu[pos + 6:]
+    outdir = tmp_path / "out"
+
+    assert swu_file.SWUFile(io.BytesIO(swu)).extract(outdir) == [n for n, _ in files]
+    assert (outdir / "image.bin").read_bytes() == files[1][1]

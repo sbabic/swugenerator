@@ -13,6 +13,12 @@ import stat
 # offset of the checksum in the header: magic + 12 fields of 8 bytes
 CHECKSUM_OFFSET = 6 + 12 * 8
 
+# New CRC format, and its SWUpdate extension for files of 4 GiB and more:
+# c_rdev_maj, unused for regular files, has the upper 32 bits of the size.
+# 070703 is not used: it is the newcx initramfs format.
+MAGIC_CRC = "070702"
+MAGIC_CRC_LARGE = "070704"
+
 
 class CPIOException(Exception):
     pass
@@ -75,10 +81,10 @@ class SWUFile:
         statres = os.stat(cpio_filename)
         size = statres.st_size
 
-        # very common error, so check sooner
         if size > 0xFFFFFFFF:
-            raise CPIOException(
-                "Too big file size for this CPIO format", statres.st_size
+            logging.warning(
+                "%s is 4 GiB or bigger: SWUpdate must support the %s format",
+                cpio_filename, MAGIC_CRC_LARGE,
             )
 
         if not stat.S_ISREG(statres.st_mode):
@@ -125,6 +131,7 @@ class SWUFile:
 
         Returns the offset of the header in the output file.
         """
+        magic = MAGIC_CRC
         if cpio_filename != "TRAILER!!!":
             statres = os.stat(cpio_filename)
             if crc is None:
@@ -151,13 +158,17 @@ class SWUFile:
                 #  cyclic redundancy check.
                 crc,
             ]
+            if statres.st_size > 0xFFFFFFFF:
+                magic = MAGIC_CRC_LARGE
+                fields[6] = statres.st_size & 0xFFFFFFFF
+                fields[9] = statres.st_size >> 32
         else:
             base_filename = cpio_filename
             fields = [0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, len(base_filename) + 1, 0]
 
         self._align()
         header_pos = self.file.tell() if self.file.seekable() else None
-        self._rawwrite(b"070702")
+        self._rawwrite(bytes(magic, "ascii"))
         for i, value in enumerate(fields):
             # UNIX epoch overflow, negative timestamps and so on...
             if (value > 0xFFFFFFFF) or (value < 0):
@@ -185,6 +196,8 @@ class SWUFile:
     def _extract_file(self, outdir, name):
         c_mode = int(self.header[14:22], 16)
         c_filesize = int(self.header[54:62], 16)
+        if self.header[0:6].decode() == MAGIC_CRC_LARGE:
+            c_filesize |= int(self.header[78:86], 16) << 32
         # Compute output path, it must not escape from outdir
         root = os.path.realpath(outdir)
         path = os.path.realpath(os.path.join(root, name))
@@ -229,7 +242,7 @@ class SWUFile:
             )
         # Parse fields: all are ASCII hex numbers
         c_magic = self.header[0:6].decode()
-        if c_magic != "070702":
+        if c_magic not in (MAGIC_CRC, MAGIC_CRC_LARGE):
             raise MagicException(
                 f"Unknown or unsupported CPIO format. Our magic: {c_magic}"
             )

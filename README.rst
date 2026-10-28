@@ -100,6 +100,16 @@ Only the files that sw-description uses are packed. ``--add-file <name>`` (can b
 repeated) adds a file found in the artifactory as it is, even if sw-description does
 not use it; a file already in the SWU is not added twice.
 
+Files of 4 GiB and more
+-----------------------
+
+The cpio formats of SWUpdate limit a file to 4 GiB - 1 byte. swugenerator
+packs bigger files with an extension of the New CRC format (magic 070704),
+where the upper 32 bits of the size are in the field rdevmajor. The other
+files keep the New CRC format. The SWU can be installed only with a SWUpdate
+version that supports the extension: older versions stop the update when they
+reach the file.
+
 Mender Artifact
 ---------------
 
