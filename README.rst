@@ -9,16 +9,17 @@ SYNOPSIS
 ========
 
 usage: SWUGenerator [-h] [-K ENCRYPTION_KEY_FILE] [-k SIGN] [-s SW_DESCRIPTION]
-                    [-a ARTIFACTORY] -o SWU_FILE [-c CONFIG]
+                    [-a ARTIFACTORY] [-o SWU_FILE] [-c CONFIG]
                     command
 
 Generator SWU Packages for SWUpdate
 
 positional arguments:
   command:
-    {create,sign,mender}  command to be executed
+    {create,sign,extract,mender}  command to be executed
       create              creates a SWU file
       sign                signs an existing SWU file provided by -i
+      extract             extracts the files of an existing SWU file provided by -i
       mender              wraps an existing SWU file provided by -i into a Mender Artifact
 
 optional arguments:
@@ -39,11 +40,11 @@ optional arguments:
   -a ARTIFACTORY, --artifactory ARTIFACTORY
                         list of directories where artifacts are searched
   -o SWU_FILE, --swu-file SWU_FILE
-                        SWU output file
+                        SWU output file, required for create, sign and mender
   -c CONFIG, --config CONFIG
                         configuration file
 
-The sign and mender commands read an existing SWU, given with
+The sign, extract and mender commands read an existing SWU, given with
 -i/--swu-in-file after the command.
 
 
@@ -109,6 +110,15 @@ where the upper 32 bits of the size are in the field rdevmajor. The other
 files keep the New CRC format. The SWU can be installed only with a SWUpdate
 version that supports the extension: older versions stop the update when they
 reach the file.
+
+``cpio -i`` cannot extract such files. The extract command extracts all files of
+a SWU as they are stored, encrypted or compressed artifacts are not decoded::
+
+    swugenerator extract -i output.swu -d outdir
+
+Without ``-d``, the files are extracted into the current directory. The
+checksums of the files are verified, and files that would be written outside the
+directory are refused.
 
 Mender Artifact
 ---------------

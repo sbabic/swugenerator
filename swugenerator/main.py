@@ -15,7 +15,7 @@ from typing import List, Optional, Tuple, Union
 
 import libconf
 
-from swugenerator import __about__, generator, mender, signer
+from swugenerator import __about__, generator, mender, signer, swu_file
 
 from swugenerator.swu_sign import SWUSignCMS, SWUSignCustom, SWUSignPKCS11, SWUSignRSA
 
@@ -303,6 +303,21 @@ def mender_swu(args: argparse.Namespace) -> None:
         swu.abort()
         raise
 
+def extract_swu(args: argparse.Namespace) -> None:
+    """Extracts the files of a SWU as they are, also the ones of 4 GiB and more
+
+    Args:
+        args (argparse.Namespace): Parsed arguments
+    """
+    try:
+        with open(args.swu_in_file, "rb") as swu:
+            names = swu_file.SWUFile(swu).extract(str(args.directory))
+    except (swu_file.FormatException, swu_file.MagicException, OSError) as error:
+        logging.critical("Cannot extract %s: %s", args.swu_in_file, error)
+        sys.exit(1)
+    for name in names:
+        logging.info("extracted %s", name)
+
 def parse_args(args: List[str]) -> None:
     """Sets up arguments for swugenerator and parses commandline args
 
@@ -437,9 +452,8 @@ def parse_args(args: List[str]) -> None:
     parser.add_argument(
         "-o",
         "--swu-file",
-        required=True,
         type=Path,
-        help="SWU output file",
+        help="SWU output file, required for create, sign and mender",
     )
 
     parser.add_argument(
@@ -497,6 +511,24 @@ def parse_args(args: List[str]) -> None:
         type=Path,
         help="SWU input file to be signed, required for the sign command",
     )
+    extract_subparser = subparsers.add_parser(
+        "extract", help="extracts the files of an existing SWU file provided by -i"
+    )
+    extract_subparser.set_defaults(func=extract_swu)
+    extract_subparser.add_argument(
+        "-i",
+        "--swu-in-file",
+        required=True,
+        type=Path,
+        help="SWU to extract",
+    )
+    extract_subparser.add_argument(
+        "-d",
+        "--directory",
+        default=Path("."),
+        type=Path,
+        help="output directory, default: the current directory",
+    )
     mender_subparser = subparsers.add_parser(
         "mender",
         help="wraps an existing SWU file provided by -i into a Mender Artifact",
@@ -546,6 +578,16 @@ def parse_args(args: List[str]) -> None:
             parser.error(str(error))
     elif args.cms_md or args.cms_certfile:
         parser.error("--cms-md and --cms-certfile need -k/--sign with CMS")
+    if args.func is extract_swu:
+        # the files are extracted as they are, nothing is written into a SWU
+        if args.swu_file or args.sign or args.encryption_key_file != (None, None) \
+                or args.encrypt_swdesc:
+            parser.error(
+                "-o/--swu-file, -k/--sign, -K/--encryption-key-file and "
+                "-t/--encrypt-swdesc cannot be used with extract"
+            )
+    elif not args.swu_file:
+        parser.error("the following arguments are required: -o/--swu-file")
     if args.func is create_swu and not args.sw_description:
         parser.error(
             "the following arguments are required: -s/--sw-description"
