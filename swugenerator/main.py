@@ -260,6 +260,7 @@ def create_swu(args: argparse.Namespace) -> None:
         args.no_ivt,
         args.no_hash,
         args.add_file,
+        args.keep_names,
     )
     try:
         swu.process()
@@ -346,6 +347,16 @@ def parse_args(args: List[str]) -> None:
         "--no-ivt",
         action="store_true",
         help="Do not generate IV when encrypting",
+    )
+
+    parser.add_argument(
+        "--keep-names",
+        action="store_true",
+        help=textwrap.dedent(
+            """\
+            Store encrypted artifacts under their name, without the suffix .enc
+            in the SWU and in sw-description"""
+        ),
     )
 
     parser.add_argument(

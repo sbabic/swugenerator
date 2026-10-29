@@ -36,8 +36,11 @@ class SWUGenerator:
         no_ivt=False,
         no_hash=False,
         extra_files=None,
+        keep_names=False,
     ):
         self.swdescription = template
+        # encrypted artifacts keep their name, without .enc
+        self.keep_names = keep_names
         self.artifacts = []
         self.out = open(out, "wb")
         self.artifactory = dirs
@@ -216,7 +219,8 @@ class SWUGenerator:
                 else:
                     iv = self.generate_iv()
 
-                new.newfilename = new.newfilename + "." + "enc"
+                if not self.keep_names:
+                    new.newfilename = new.newfilename + "." + "enc"
                 new_path = os.path.join(self.temp.name, new.newfilename)
                 new.encrypt(new_path, self.aeskey, iv)
                 new.fullfilename = new_path
@@ -227,8 +231,9 @@ class SWUGenerator:
             for image in self.artifacts:
                 if image.newfilename == new.newfilename:
                     logging.critical(
-                        "%s is used with incompatible attributes, it would be stored twice as %s",
+                        "%s is used with incompatible attributes, it would be stored twice as %s%s",
                         entry["filename"], new.newfilename,
+                        " (encrypted and not: do not use --keep-names)" if self.keep_names else "",
                     )
                     sys.exit(1)
             self.artifacts.append(new)

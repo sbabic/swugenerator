@@ -29,6 +29,8 @@ optional arguments:
   -e, --no-encrypt      Do not encrypt files, for artifacts that are already encrypted.
                         encrypted and ivt are kept as set in sw-description
   -x, --no-ivt          Do not generate IV when encrypting
+  --keep-names          Store encrypted artifacts under their name, without
+                        the suffix .enc in the SWU and in sw-description
   -y, --no-hash         Do not store sha256 hash in sw-description
   -k SIGN, --sign SIGN  RSA key or certificate to sign the SWU
   -s SW_DESCRIPTION, --sw-description SW_DESCRIPTION
@@ -67,6 +69,14 @@ It maybe run in two steps to create an unsigned swu file and then sign it later 
 
     swugenerator -o output.swu -a . -s sw-description.in create
     swugenerator -o signed_output.swu -i output.swu -k CMS,key.pem,ca.crt sign
+
+Names of encrypted artifacts
+----------------------------
+
+An encrypted artifact is stored with the suffix ``.enc``, and its ``filename`` in
+sw-description is changed accordingly, so that the same file can be packed both
+encrypted and not. ``--keep-names`` keeps the original name, as scripts in
+sw-description may expect; a file used both encrypted and not is then refused.
 
 CMS signing with several signers
 --------------------------------
