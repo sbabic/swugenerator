@@ -40,10 +40,11 @@ optional arguments:
                         list of directories where artifacts are searched
   -o SWU_FILE, --swu-file SWU_FILE
                         SWU output file
-  -i, --swu-in-file SWU_IN_FILE
-                        SWU input file to be signed for the sign command
   -c CONFIG, --config CONFIG
                         configuration file
+
+The sign and mender commands read an existing SWU, given with
+-i/--swu-in-file after the command.
 
 
 Description
@@ -68,7 +69,7 @@ in libconfig or in JSON (a sw-description starting with ``{``), and provides the
 It maybe run in two steps to create an unsigned swu file and then sign it later in a second call::
 
     swugenerator -o output.swu -a . -s sw-description.in create
-    swugenerator -o signed_output.swu -i output.swu -k CMS,key.pem,ca.crt sign
+    swugenerator -o signed_output.swu -k CMS,key.pem,ca.crt sign -i output.swu
 
 Names of encrypted artifacts
 ----------------------------
