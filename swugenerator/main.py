@@ -31,9 +31,6 @@ class InvalidSigningOption(ValueError):
 def extract_keys(keyfile: str) -> Tuple[Optional[str], Optional[str]]:
     """Extracts encryption key and initialization vector (IV)
 
-    TODO Ensure alignment of key file with description in docs:
-    (https://sbabic.github.io/swupdate/encrypted_images.html#building-an-encrypted-swu-image)
-
     Args:
         keyfile (str): Path to file containing key and IV
 
@@ -46,19 +43,26 @@ def extract_keys(keyfile: str) -> Tuple[Optional[str], Optional[str]]:
     """
     try:
         with open(keyfile, "r", encoding="utf-8") as keyfile_fd:
-            lines = keyfile_fd.readlines()
+            data = keyfile_fd.read()
     except IOError as error:
         raise InvalidKeyFile(f"Failed to open key file {keyfile}") from error
 
     enc_key, init_vec = None, None
-    for line in lines:
-        key, value = (
-            line.replace(" ", "").rstrip("\n").split("=") if len(line.split("=")) == 2 else (None, None)
-        )
-        if key == "key":
-            enc_key = value
-        if key == "iv":
-            init_vec = value
+    if "key=" in data:
+        lines = data.split("\n")
+        for line in lines:
+            key, value = (
+                line.replace(" ", "").rstrip("\n").split("=") if len(line.split("=")) == 2 else (None, None)
+            )
+            if key == "key":
+                enc_key = value
+            if key == "iv":
+                init_vec = value
+    else:
+        key_iv = data.rstrip("\n").split(" ")
+        enc_key = key_iv[0]
+        if len(key_iv) == 2:
+            init_vec = key_iv[1]
     return enc_key, init_vec
 
 
