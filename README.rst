@@ -83,6 +83,23 @@ sw-description is changed accordingly, so that the same file can be packed both
 encrypted and not. ``--keep-names`` keeps the original name, as scripts in
 sw-description may expect; a file used both encrypted and not is then refused.
 
+Sizes of compressed and encrypted artifacts
+-------------------------------------------
+
+For a compressed artifact, the property ``decompressed-size`` is set to the size
+of the original file, and for an encrypted one ``decrypted-size``. SWUpdate uses
+them to check that the output has enough free space.
+
+SWUpdate up to 2026.05.2 also uses this size, when not ``installed-directly``,
+to check the free space before an artifact is copied to TMPDIR, although the
+file is stored there as it is in the SWU, still compressed or encrypted. If
+TMPDIR is small, for example a tmpfs, such an update can fail with "Not enough
+free space to extract" although the file fits. With these SWUpdate versions,
+use ``installed-directly`` for such artifacts, or make TMPDIR large enough for
+their original size. With a tmpfs, an ``embedded-script`` can raise its limit
+before any artifact is copied, for example
+``os.execute('mount -o remount,size=96M /tmp')``.
+
 CMS signing with several signers
 --------------------------------
 
