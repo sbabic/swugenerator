@@ -251,7 +251,9 @@ class SWUGenerator:
             entry["ivt"] = new.ivt
             entry.setdefault("properties", {}) \
                  .update({ "decrypted-size": str(new.getsize()) })
-        if entry.get("compressed") and not self.nocompress:
+        # no-decompressed-size is for swugenerator only, SWUpdate ignores it
+        if entry.get("compressed") and not self.nocompress \
+                and entry.get("no-decompressed-size") is not True:
             entry.setdefault("properties", {}) \
                  .update({ "decompressed-size": str(new.getsize()) })
 

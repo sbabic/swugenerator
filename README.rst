@@ -90,15 +90,34 @@ For a compressed artifact, the property ``decompressed-size`` is set to the size
 of the original file, and for an encrypted one ``decrypted-size``. SWUpdate uses
 them to check that the output has enough free space.
 
-SWUpdate up to 2026.05.2 also uses this size, when not ``installed-directly``,
-to check the free space before an artifact is copied to TMPDIR, although the
-file is stored there as it is in the SWU, still compressed or encrypted. If
-TMPDIR is small, for example a tmpfs, such an update can fail with "Not enough
-free space to extract" although the file fits. With these SWUpdate versions,
-use ``installed-directly`` for such artifacts, or make TMPDIR large enough for
-their original size. With a tmpfs, an ``embedded-script`` can raise its limit
-before any artifact is copied, for example
+SWUpdate up to 2026.05.2 also uses ``decompressed-size``, when not
+``installed-directly``, to check the free space before an artifact is copied to
+TMPDIR, although the file is stored there as it is in the SWU, still compressed.
+If TMPDIR is small, for example a tmpfs, such an update can fail with "Not
+enough free space to extract" although the file fits. ``decrypted-size`` does
+not cause this: SWUpdate reads it only for an artifact that is encrypted and not
+compressed, and then it is below the size of the encrypted file.
+
+With these SWUpdate versions, use ``installed-directly`` for such artifacts,
+make TMPDIR large enough for their original size, or set
+``no-decompressed-size`` in the entry. With a tmpfs, an ``embedded-script`` can
+raise its limit before any artifact is copied, for example
 ``os.execute('mount -o remount,size=96M /tmp')``.
+
+``no-decompressed-size = true;`` in an entry of sw-description tells
+swugenerator not to add ``decompressed-size`` to it::
+
+    images: ( {
+        filename = "rootfs.ext4";
+        compressed = "zstd";
+        no-decompressed-size = true;
+        ...
+    } );
+
+It is for swugenerator only: it is kept in the generated sw-description, and
+SWUpdate ignores it. A ``decompressed-size`` set in the template is kept as it
+is: handlers that need it to install a compressed artifact, such as ``ubivol``,
+``flash`` and ``docker_imageload``, fail without it.
 
 CMS signing with several signers
 --------------------------------
